@@ -1,0 +1,115 @@
+{
+  "mode": "simulated",
+  "source": "local functional verification, not model evaluation",
+  "suite_puzzles": 5,
+  "trials": 20,
+  "paid_requests": 0,
+  "checks": [
+    "pytest",
+    "ruff",
+    "HTTP endpoints",
+    "suite",
+    "SSE lifecycle",
+    "exports"
+  ],
+  "stats": {
+    "mode": "simulated",
+    "tier": "primary",
+    "kind": "suite",
+    "rows": [
+      {
+        "model_id": "typesafe/jev-1.13",
+        "label": "Jev 1.13",
+        "agent": "Synthetic fixture 1",
+        "attempted": 5,
+        "solved": 5,
+        "planned": 5,
+        "solve_rate": 100.0,
+        "avg_api_latency_ms": null,
+        "request_count": 0,
+        "avg_attempt_ms": 417.44236000813544,
+        "mean_moves_all": 4.4,
+        "mean_moves_solved": 4.4,
+        "mean_optimality_gap": 0.2,
+        "proven_solved_count": 5,
+        "malformed": 0,
+        "retries": 0,
+        "statuses": {
+          "SOLVED": 5
+        }
+      },
+      {
+        "model_id": "openai/gpt-6-luna-decisions",
+        "label": "GPT-6 Luna Decisions",
+        "agent": "Synthetic fixture 2",
+        "attempted": 5,
+        "solved": 5,
+        "planned": 5,
+        "solve_rate": 100.0,
+        "avg_api_latency_ms": null,
+        "request_count": 0,
+        "avg_attempt_ms": 664.2375199822709,
+        "mean_moves_all": 6.4,
+        "mean_moves_solved": 6.4,
+        "mean_optimality_gap": 2.2,
+        "proven_solved_count": 5,
+        "malformed": 0,
+        "retries": 0,
+        "statuses": {
+          "SOLVED": 5
+        }
+      },
+      {
+        "model_id": "cloudflare/clef",
+        "label": "Cloudflare Clef",
+        "agent": "Synthetic fixture 3",
+        "attempted": 5,
+        "solved": 0,
+        "planned": 5,
+        "solve_rate": 0.0,
+        "avg_api_latency_ms": null,
+        "request_count": 0,
+        "avg_attempt_ms": 1934.1188999824226,
+        "mean_moves_all": 30,
+        "mean_moves_solved": null,
+        "mean_optimality_gap": null,
+        "proven_solved_count": 0,
+        "malformed": 0,
+        "retries": 0,
+        "statuses": {
+          "MOVE_LIMIT": 5
+        }
+      },
+      {
+        "model_id": "anthropic/claude-opus-5.5",
+        "label": "Claude Opus 5.5",
+        "agent": "Synthetic fixture 4",
+        "attempted": 5,
+        "solved": 5,
+        "planned": 5,
+        "solve_rate": 100.0,
+        "avg_api_latency_ms": null,
+        "request_count": 0,
+        "avg_attempt_ms": 692.2486000228673,
+        "mean_moves_all": 6.4,
+        "mean_moves_solved": 6.4,
+        "mean_optimality_gap": 2.2,
+        "proven_solved_count": 5,
+        "malformed": 0,
+        "retries": 0,
+        "statuses": {
+          "SOLVED": 5
+        }
+      }
+    ],
+    "suite_count": 1,
+    "analysis": [
+      "Simulated UI fixtures are not evidence of OpenRouter model performance.",
+      "Simulated UI fixtures are not evidence of OpenRouter model performance.",
+      "Simulated UI fixtures are not evidence of OpenRouter model performance.",
+      "Simulated UI fixtures are not evidence of OpenRouter model performance.",
+      "Simulated UI fixtures are not evidence of OpenRouter model performance."
+    ],
+    "denominator": "All terminal started trials, including infrastructure failures; NOT_RUN excluded"
+  }
+}

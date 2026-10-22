@@ -1,0 +1,36 @@
+{
+  "mode": "simulated",
+  "source": "actual headless browser on isolated localhost",
+  "checks": [
+    {
+      "viewport": [
+        1366,
+        768
+      ],
+      "horizontal_overflow": false,
+      "arena_bottom_px": 736.75
+    },
+    {
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal_overflow": false,
+      "arena_bottom_px": 1025
+    }
+  ],
+  "flows": [
+    "initial arena",
+    "race",
+    "30 cap",
+    "five-puzzle suite",
+    "analysis",
+    "raw download",
+    "replay",
+    "presentation identity",
+    "abort",
+    "mobile"
+  ],
+  "page_errors": [],
+  "console_errors": []
+}
