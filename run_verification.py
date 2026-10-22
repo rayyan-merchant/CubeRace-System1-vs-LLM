@@ -48,7 +48,7 @@ def main():
             for fmt in ("csv", "steps.csv", "requests.csv"):
                 response = client.get(f"/api/runs/{run_id}/export/{fmt}")
                 response.raise_for_status()
-                (evidence / f"simulated-suite.{fmt}").write_text(response.text, encoding="utf-8")
+                (evidence / f"simulated-suite.{fmt}").write_bytes(response.content)
             stats = client.get("/api/stats?mode=simulated").json()
             summary = {"mode": "simulated", "source": "local functional verification, not model evaluation",
                        "suite_puzzles": 5, "trials": 20, "paid_requests": 0,
