@@ -6,8 +6,7 @@ benchmark dashboard and recording slide distinguish **LIVE** evidence from **SIM
 functional fixtures throughout.
 
 **Readiness:** local implementation and verification evidence are described in
-[IMPLEMENTATION_REPORT.md](IMPLEMENTATION_REPORT.md). Live four-model performance,
-student identity and the final screen recording require real user inputs. No model
+[IMPLEMENTATION_REPORT.md](IMPLEMENTATION_REPORT.md). Live four-model performance and the final screen recording require real user inputs. No model
 performance is implied by the included simulated sample.
 
 ## Start locally
@@ -36,8 +35,9 @@ cp .env.example .env
 Open http://127.0.0.1:8000. Use one server worker. `requirements.txt` alone installs the
 runtime; the development file adds tests, lint, independent cube verification and Playwright.
 The default is simulated and costs nothing. Opening a tab or reading statistics never
-starts paid work. Set `STUDENT_NAME` and `STUDENT_ROLL` in the server `.env` and restart
-to replace the conspicuous identity placeholders. Do not copy the reference student's identity.
+starts paid work. The frontend recording banner is explicitly set to **Rayyan Merchant · 23K-0073**,
+as requested by the student, and stays visible on every tab and in full screen. The server
+`STUDENT_NAME` / `STUDENT_ROLL` metadata settings do not override this presentation banner.
 
 ## Using the application
 
@@ -112,7 +112,7 @@ the cumulative ceiling. Preserve the database between live sessions.
 
 ## Minimum-spend workflow and fixed Claude settings
 
-1. Rehearse with simulated fixtures for free. Configure identity and recording layout first.
+1. Rehearse with simulated fixtures for free. Check the identity banner and recording layout first.
 2. Privately enable live access only when ready. Set `API_RETRIES=0`,
    `CLAUDE_REASONING_EFFORT=low`, `CLAUDE_MAX_TOKENS=512` and restart. Never disable
    Claude's mandatory reasoning. Supported efforts are `low`, `medium`, `high`, `xhigh`, `max`;
@@ -262,7 +262,7 @@ profiles and logged-in accounts are not used.
 
 ## Recording and submission checklist
 
-- Set the real student name and roll; verify both remain visible on every tab and full screen.
+- Verify **Rayyan Merchant · 23K-0073** remains visible on every tab and in full screen.
 - Run and retain the four-call live smoke log, then five or more primary puzzles × four models.
 - Inspect errors and gaps; export raw JSON/CSVs. Record unavailable routes as incomplete.
 - Record an in-progress race with all four cards, moves and timers visible.
@@ -277,3 +277,33 @@ The assignment PDF is authoritative; the user's implementation brief supplied th
 constraints. Functional inspiration: [Muhammad Abbas's reference repository](https://github.com/muhammad1234-max/AI-Engineering-Assignment2).
 See [independent reference review](docs/REFERENCE_REVIEW.md). No reference author identity,
 benchmark outcomes or source code is submitted as this project's work.
+
+
+## Recording layout and methodology
+
+The recording UI retains CubeRace's original colors, four model cards and cube renderer.
+Race Arena uses the heading **Rubik's Cube Benchmark**; Results Slide uses **Benchmark Results**.
+Source and difficulty filters in Benchmark Analysis also select the slide's evidence.
+Its puzzle count is the actual planned puzzle count in the selected fixed-condition suites,
+not a hardcoded five. Empty filters show zero puzzles and unavailable metrics.
+
+SIMULATED cards, tables and slides show the assigned model slots, but synthetic results
+are explicitly labelled and never support model-performance conclusions. Missing metrics
+remain N/A. Completed execution does not imply successful model completion: failure and
+NOT_RUN counts remain visible in the comparison tables.
+
+Detailed methodology lives here rather than above the demo controls: each suite uses the
+arena source, difficulty and starting seed; subsequent seeds advance deterministically.
+Live agents receive URFDLB row-major facelets, fixed centers, their complete move history
+and the same legal actions, never the scramble or reference solution. Cube nets use U white,
+R red, F green, D yellow, L orange, B blue. Rankings use measured completion time; playback
+speed affects only rendering. All terminal started trials, including infrastructure failures,
+form the solve-rate denominator; NOT_RUN is excluded and counted separately. Optimality gaps
+use solved trials with a proven reference. Aggregates exclude suites with different fixed
+settings; the exclusion count is shown when relevant. Results are descriptive and do not
+establish statistical significance. Single races are saved/replayable but excluded from suites.
+
+The live request plan retains explicit per-run consent, a user-entered cap, recommended
+race/suite caps, retry count, persistent request usage and known/unknown billing. It is hidden
+on Results Slide; opening that slide, replaying, exporting or refreshing starts no inference.
+API schema documentation remains available at `/openapi.json`.

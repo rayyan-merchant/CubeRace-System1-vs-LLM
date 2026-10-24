@@ -19,7 +19,7 @@ model names do not override the four assigned IDs in the PDF's requirements tabl
 | Four assigned API interfaces | PASS with offline fixtures | Official contracts reviewed; exact routes and IDs, schema validation, retry/cap/failure tests |
 | Live routing/account acceptance | NOT RUN | No paid inference authorized in the cost optimization review |
 | Empirical four-model comparison | BLOCKED | No live trials, performance figures or model winners claimed |
-| Student name and roll | PENDING USER INPUT | Conspicuous placeholders; `.env` settings supported across all views |
+| Student name and roll | PASS | Student-authorized Rayyan Merchant · 23K-0073 banner, all tabs and document fullscreen |
 | Required final screen recording | MANUAL / NOT CREATED | Recording checklist and results slide implemented |
 | Deployment | NOT PERFORMED | User did not authorize deployment |
 
@@ -81,7 +81,7 @@ isolation, restart recovery, aggregate denominators, extension N/A and exported 
 
 Browser checks cover arena rendering, race, move-limit termination, five-puzzle suite,
 analysis, raw downloads, replay, presentation identity, abort control and responsive layouts.
-All four arena cards fit within 1366×768 (bottom 736.75 px) and 1920×1080 (bottom 1025 px).
+All four arena cards fit within 1366×768 (ready-card bottom 725 px) and 1920×1080 (ready-card bottom 917 px).
 The 390×844 mobile layout scrolls vertically without horizontal overflow.
 The application preserves a completed server result if Abort is pressed after server
 completion while animation is still playing; it stops playback without inventing an abort.
@@ -99,7 +99,7 @@ completion while animation is still playing; it stops playback without inventing
   [results slide](docs/evidence/results-slide.png).
 
 These are real local UI screenshots and functional fixture records. They are prominently
-marked simulated and retain identity placeholders. They are not live model evaluation
+marked simulated. Updated recording screenshots carry the student-authorized identity banner. They are not live model evaluation
 evidence or a substitute for the required student recording.
 
 ## Reference and official contract review
@@ -171,7 +171,55 @@ Final patch verification: `python run_verification.py` passed **196 tests** (one
 Starlette/AnyIO deprecation warning), Ruff and Node syntax checks, followed by a successful
 five-puzzle / 20-trial simulated suite. `python scripts/verify_browser.py` passed desktop,
 laptop, mobile, consent, billing and saved live-mode replay checks with zero page/console
-errors. Four browser inference-path calls were intercepted locally; no real inference.
+errors. The cost-patch browser run intercepted four inference-path calls locally; the expanded UI checks below intercept eight. No real inference.
 Restart regression confirms pending journal entries remain counted, attributed to their
 run/puzzle and unknown-cost after recovery. Source changes preserve the original engine,
 fixed four IDs, 30 moves and strict schema. No live cost or performance savings verified.
+
+
+## Final recording UI cleanup — 2026-10-24
+
+Scope: frontend presentation, documentation and the isolated browser verifier only. Removed
+marketing headlines, assignment/developer reminders, repeated introductions and verbose normal
+status copy. Kept the original palette, branding, model cards and cube visualization. Permanent
+student-authorized identity: **Rayyan Merchant · 23K-0073**, including document fullscreen.
+Server identity metadata remains a separate configuration and is not rewritten by the UI.
+
+The arena heading is Rubik's Cube Benchmark; the analysis heading remains Benchmark Analysis;
+the slide heading is Benchmark Results. Its source, difficulty and puzzle count come from
+selected aggregates, including honest empty results. Synthetic results retain explicit labels,
+assigned model names and no-performance qualifications. Tables retain failure/NOT_RUN counts,
+N/A metrics and billing. Longer methodology was moved to README; paid consent and request caps
+remain in the live controls. No backend, cube engine, BFS, model ID, prompt, API setting,
+reasoning effort, metric calculation, persistence or experimental policy was changed.
+
+Browser verification uses an isolated temporary database, dummy credentials and exhaustive
+MockTransport interception. All screenshots labelled offline-live-errors show deliberately
+failed HTTP fixtures, not actual OpenRouter measurements. No paid inference or deployment
+was performed. Test-only live-mode screenshots carry an OFFLINE UI FIXTURE watermark;
+it is added by the screenshot harness and is not part of the application UI.
+
+
+Recording verification: `python run_verification.py` passed **196 tests**, Ruff and both Node
+syntax checks, plus a five-puzzle / 20-trial simulated suite. One existing Starlette/AnyIO
+deprecation warning remains. Expanded `python scripts/verify_browser.py` checks actual
+1366×768 and 1920×1080 views for all three pages, unscrolled arena cards, unclipped desktop
+tables, sticky identity while scrolling and document fullscreen. It also checks difficulty,
+seed, scramble generation, six-face expansion, playback, start/abort, running controls,
+empty results, selected source/tier and dynamic puzzle counts, simulated completion/move
+limit, intercepted live unavailability/NOT_RUN counts, billing, consent, download, saved
+replay and refresh without inference. Eight HTTP fixture calls total, zero real OpenRouter
+calls, zero page errors and zero console errors. Mobile 390×844 retains vertical scrolling
+without horizontal overflow. This establishes UI readiness, not live API availability or
+empirical model performance. The final video remains a manual student deliverable.
+
+| View | 1366×768 | 1920×1080 |
+|---|---|---|
+| Race Arena | [Screenshot](docs/evidence/arena-1366x768.png) | [Screenshot](docs/evidence/arena-1920x1080.png) |
+| Benchmark Analysis | [Screenshot](docs/evidence/analysis-1366x768.png) | [Screenshot](docs/evidence/analysis-1920x1080.png) |
+| Full analysis page | [Screenshot](docs/evidence/analysis-full-1366x768.png) | [Screenshot](docs/evidence/analysis-full-1920x1080.png) |
+| Results Slide | [Screenshot](docs/evidence/presentation-1366x768.png) | [Screenshot](docs/evidence/presentation-1920x1080.png) |
+| Fullscreen slide | [Screenshot](docs/evidence/fullscreen-1366x768.png) | [Screenshot](docs/evidence/fullscreen-1920x1080.png) |
+| Offline live-mode failures | [Screenshot](docs/evidence/offline-live-errors-presentation-1366x768.png) | [Screenshot](docs/evidence/offline-live-errors-presentation-1920x1080.png) |
+
+Machine-readable browser checks: [browser-verification.json](docs/evidence/browser-verification.json).
