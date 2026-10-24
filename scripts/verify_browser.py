@@ -7,6 +7,7 @@ import sys
 import tempfile
 import threading
 import time
+import httpx
 from urllib.request import urlopen
 from playwright.sync_api import sync_playwright, expect
 
@@ -24,10 +25,17 @@ def main():
         sock.bind(("127.0.0.1", 0))
         port = sock.getsockname()[1]
     with tempfile.TemporaryDirectory() as tmp:
+        # Dummy credentials + an exhaustive MockTransport: live UI paths never reach OpenRouter.
+        inference = []
+        def fixture(request):
+            inference.append(json.loads(request.content))
+            return httpx.Response(400, json={"error": {"message": "offline route fixture"},
+                                            "usage": {"cost": 0.0001}})
         with (evidence / "browser-server.log").open("w", encoding="utf-8") as log:
             log.write("Isolated credential-free in-process Uvicorn test server\n")
             server = uvicorn.Server(uvicorn.Config(
-                create_app(Settings(database=str(Path(tmp) / "browser.db"))),
+                create_app(Settings(database=str(Path(tmp) / "browser.db"), key="offline-fixture",
+                                    allow_live=True, mock_mode=False), httpx.MockTransport(fixture)),
                 host="127.0.0.1", port=port, log_level="warning"))
             thread = threading.Thread(target=server.run, daemon=True)
             thread.start()
@@ -55,7 +63,8 @@ def main():
                     assert page.locator(".race-card").count() == 4
                     assert page.locator("svg polygon").count() == 108
                     assert "SET STUDENT_NAME" in page.locator(".identity").inner_text()
-                    assert page.locator("#mode option[value=live]").evaluate("el => el.disabled")
+                    assert page.locator("#mode").input_value() == "simulated"
+                    assert inference == []
                     for width, height in ((1366, 768), (1920, 1080)):
                         page.set_viewport_size({"width": width, "height": height})
                         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
@@ -86,15 +95,22 @@ def main():
                         page.locator("#history a").filter(has_text="JSON").first.click()
                     downloaded.value.save_as(str(Path(tmp) / "download.json"))
                     assert json.loads((Path(tmp) / "download.json").read_text())["mode"] == "simulated"
+                    page.locator("body").press("Control+Home")
                     page.screenshot(path=str(evidence / "analysis-1366x768.png"), full_page=True)
-                    page.locator(".replay").first.click()
+                    # Replay fetch is asynchronous; an already-enabled Start is not proof
+                    # that replay finished. Its final config read happens after playback.
+                    with page.expect_response(lambda r: r.url.endswith("/api/config")):
+                        page.locator(".replay").first.click()
                     expect(page.locator("#start")).to_be_enabled(timeout=30000)
                     page.locator('[data-tab="analysis"]').click()
                     page.locator('[data-tab="presentation"]').click()
                     page.locator("#slide-provenance").filter(has_text="SIMULATED").wait_for()
+                    expect(page.locator("#presentation")).to_be_visible()
                     assert page.locator(".identity").is_visible()
+                    page.locator("body").press("Control+Home")
                     page.screenshot(path=str(evidence / "results-slide.png"), full_page=True)
                     page.locator('[data-tab="arena"]').click()
+                    page.locator("#speed").select_option("1")
                     page.locator("#start").click()
                     page.locator("#abort").click()
                     expect(page.locator("#start")).to_be_enabled(timeout=10000)
@@ -102,10 +118,36 @@ def main():
                     page.set_viewport_size({"width": 390, "height": 844})
                     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
                     page.screenshot(path=str(evidence / "arena-mobile.png"), full_page=True)
+                    assert inference == []  # All existing rendering, exports and replay were free.
+                    page.set_viewport_size({"width": 1366, "height": 768})
+                    page.locator("#mode").select_option("live")
+                    page.locator("#start").click()
+                    expect(page.locator("#notice")).to_contain_text("paid-call authorization")
+                    assert inference == []
+                    page.locator("#call-cap").fill("4")
+                    page.locator("#paid-confirm").check()
+                    page.locator("#start").click()
+                    expect(page.locator("#start")).to_be_enabled(timeout=30000)
+                    assert len(inference) == 4
+                    assert not page.locator("#paid-confirm").is_checked()
+                    expect(page.locator("#persistent-billing")).to_contain_text("Known $0.000400")
+                    page.locator('[data-tab="analysis"]').click()
+                    expect(page.locator(".replay").first).to_be_enabled()
+                    with page.expect_response(lambda r: r.url.endswith("/api/config")):
+                        page.locator(".replay").first.click()
+                    expect(page.locator("#start")).to_be_enabled(timeout=30000)
+                    page.reload()
+                    expect(page.locator("#mode")).to_have_value("simulated")
+                    page.locator('[data-tab="analysis"]').click()
+                    page.locator("#refresh").click()
+                    assert len(inference) == 4
                     browser.close()
                 report = {"mode": "simulated", "source": "actual headless browser on isolated localhost",
                     "checks": checks, "flows": ["initial arena", "race", "30 cap", "five-puzzle suite",
-                        "analysis", "raw download", "replay", "presentation identity", "abort", "mobile"],
+                        "analysis", "raw download", "replay", "presentation identity", "abort", "mobile",
+                        "paid consent with offline transport", "billing display", "live-mode replay without inference"],
+                    "offline_fixture_inference_requests": len(inference),
+                    "real_openrouter_inference_requests": 0,
                     "page_errors": errors, "console_errors": console_errors}
                 (evidence / "browser-verification.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
                 assert not errors and not console_errors, report

@@ -2,6 +2,7 @@ import {cubeSVG,cubeNet,COLORS,SOLVED} from './cube.js';
 const $=id=>document.getElementById(id);
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=(x,d=1)=>x===null||x===undefined?'N/A':Number(x).toFixed(d);
+const cost=b=>!b||!b.request_count?'No paid requests':b.known_cost_usd==null?`Cost unknown (${b.unknown_cost_requests} requests)`:`Known $${Number(b.known_cost_usd).toFixed(6)}${b.unknown_cost_requests?` + ${b.unknown_cost_requests} unknown`:''}`;
 const colors=['#6252d4','#368fbb','#319d83','#d08a42'];
 const questions=['Which model makes the fastest decisions?','Which has the highest solve rate?','Which finds the shortest solutions?','Is fastest also highest quality?','What would you choose in practice?'];
 let config,puzzle,runId=null,busy=false,source=null,queue=[],pumping=false,selectedStats;
@@ -44,18 +45,21 @@ function drawTrial(i,t){
 function showPuzzle(p){puzzle=p;$('scramble').textContent=p.scramble.join(' ');$('optimum').textContent=p.shortest_distance==null?'Exact reference: unproven · N/A':`Proven shortest: ${p.shortest_distance} HTM`;$('seed').value=p.seed;}
 async function generate(){const p=await api(`/api/puzzle?seed=${Number($('seed').value)}&tier=${$('tier').value}`);showPuzzle(p);drawCards(p.initial_state);notice('Shared state ready. Live history starts empty; scramble is shown only to the observer.');}
 function updatePlan(){
-  const n=Number($('puzzles').value)||5, per=4*30*(1+config.retries);
+  const n=Number($('puzzles').value)||5, per=config.models.length*30*(1+config.retries);
   $('suite-plan').textContent=`${n} puzzles × 4 agents = ${n*4} trials · max ${n*per} live requests`;
+  $('persistent-billing').textContent=`Requests ${config.budget_used}/${config.budget_limit} · ${cost(config.billing)}`;
+  $('recommended-cap').textContent=`Recommended race cap ${per}; suite cap ${n*per}. Set your cap explicitly; budgets are never increased automatically.`;
   $('live-plan').hidden=$('mode').value!=='live';
   $('call-plan').textContent=`Race maximum: ${per} requests. Suite maximum: ${n*per} requests (${n} × 4 × 30 × ${1+config.retries}, including retries). Requests may cost money; token cost is provider-dependent.`;
-  $('budget').textContent=`Persistent budget: ${config.budget_used} used / ${config.budget_limit}. It does not reset when a race starts.`;
+  $('budget').textContent=`Persistent requests: ${config.budget_used} / ${config.budget_limit}. ${cost(config.billing)}. Never auto-reset. Claude: ${config.claude_reasoning_effort} / ${config.claude_max_tokens} tokens.`;
 }
 async function start(kind){
   const mode=$('mode').value, count=kind==='suite'?Number($('puzzles').value):1;
   if(mode==='live'&&!$('paid-confirm').checked)throw new Error('Check the paid-call authorization in the plan below before starting live.');
+  const approved=mode==='live'&&$('paid-confirm').checked;$('paid-confirm').checked=false;
   setBusy(true);modeBadge(mode);queue=[];
   try{
-    const run=await api('/api/runs',{method:'POST',body:JSON.stringify({mode,kind,puzzles:count,tier:$('tier').value,seed:Number($('seed').value),call_cap:mode==='live'?Number($('call-cap').value):0,confirm_paid_calls:mode==='live'&&$('paid-confirm').checked})});
+    const run=await api('/api/runs',{method:'POST',body:JSON.stringify({mode,kind,puzzles:count,tier:$('tier').value,seed:Number($('seed').value),call_cap:mode==='live'?Number($('call-cap').value):0,confirm_paid_calls:approved})});
     runId=run.id;switchTab('arena');notice(mode==='simulated'?'SIMULATED: deterministic scripts exercise the UI; no model quality or latency is represented.':'LIVE: OpenRouter requests running under your confirmed cap.');
     $('paid-confirm').checked=false;connect(runId);
   }catch(e){setBusy(false);throw e;}
@@ -83,7 +87,7 @@ async function pump(){
   }}catch(e){notice(`Playback error: ${e.message}. Saved server results remain available.`,true);setBusy(false);}finally{pumping=false;}
 }
 async function finish(status){$('progress').textContent=`${status} · ${runId.slice(0,8)}`;notice(`${displayMode.toUpperCase()} run ${status.toLowerCase()}. Open Benchmark Analysis for saved results and exports.`);config=await api('/api/config');updatePlan();await refreshStats();setBusy(false);}
-function tableRows(stats){return stats.rows.map(r=>`<tr><td><strong>${escape(r.agent)}</strong><small>${r.solved}/${r.attempted} solved · ${r.planned} planned</small></td><td>${fmt(r.solve_rate)}%</td><td>${fmt(r.avg_api_latency_ms)} ms<small>${r.request_count} requests</small></td><td>${r.avg_attempt_ms==null?'N/A':fmt(r.avg_attempt_ms/1000,2)+' s'}</td><td>${fmt(r.mean_moves_all,2)}</td><td>${fmt(r.mean_moves_solved,2)}</td><td>${fmt(r.mean_optimality_gap,2)}<small>${r.proven_solved_count} proven solved</small></td><td>${r.malformed} malformed · ${r.retries} retries<small>${escape(Object.entries(r.statuses).map(([k,v])=>`${k}: ${v}`).join(' · ')||'Not run')}</small></td></tr>`).join('');}
+function tableRows(stats){return stats.rows.map(r=>`<tr><td><strong>${escape(r.agent)}</strong><small>${r.solved}/${r.attempted} solved · ${r.planned} planned</small></td><td>${fmt(r.solve_rate)}%</td><td>${fmt(r.avg_api_latency_ms)} ms<small>${r.request_count} requests</small></td><td>${r.avg_attempt_ms==null?'N/A':fmt(r.avg_attempt_ms/1000,2)+' s'}</td><td>${fmt(r.mean_moves_all,2)}</td><td>${fmt(r.mean_moves_solved,2)}</td><td>${fmt(r.mean_optimality_gap,2)}<small>${r.proven_solved_count} proven solved</small></td><td>${r.malformed} malformed · ${r.retries} retries<small>${escape(cost(r.billing))}</small><small>${escape(Object.entries(r.statuses).map(([k,v])=>`${k}: ${v}`).join(' · ')||'Not run')}</small></td></tr>`).join('');}
 function bars(rows,key,unit,target,max){
   const measured=rows.map(r=>r[key]).filter(v=>v!=null), peak=max||Math.max(...measured,1);
   $(target).innerHTML=rows.map((r,i)=>`<div class="bar-row"><span>${escape(r.agent)}</span><div class="bar-bg"><div class="bar-fill" id="${target}-${i}"></div></div><span class="bar-value">${r[key]==null?'N/A':fmt(r[key])+unit}</span></div>`).join('');
@@ -94,14 +98,15 @@ async function refreshStats(){
   const [stats,runs]=await Promise.all([api(`/api/stats?mode=${mode}&tier=${tier}`),api('/api/runs')]);selectedStats=stats;
   const trials=stats.rows.reduce((s,r)=>s+r.attempted,0),solved=stats.rows.reduce((s,r)=>s+r.solved,0);
   $('summary').innerHTML=[[stats.suite_count,'Saved suites'],[trials,'Started terminal trials'],[solved,'Solved trials'],[mode==='live'?'LIVE':'SIMULATED','Evidence source']].map(([v,k])=>`<div class="tile"><strong>${v}</strong><span>${k}</span></div>`).join('');
-  $('table-caption').textContent=`${mode.toUpperCase()} / ${tier.toUpperCase()} SUITES · ${stats.denominator}`;
+  $('table-caption').textContent=`${mode.toUpperCase()} / ${tier.toUpperCase()} SUITES · ${stats.denominator} · ${stats.excluded_policy_suites||0} suites excluded (different fixed settings)`;
+  $('suite-billing').textContent=`Selected suites: ${stats.billing.request_count} requests · ${cost(stats.billing)}. Claude effort ${stats.request_policy?.claude_reasoning_effort||'legacy/unknown'}, ceiling ${stats.request_policy?.chat_max_tokens||'unknown'}.`;
   $('stats-rows').innerHTML=tableRows(stats);
   bars(stats.rows,'solve_rate','%','solve-chart',100);bars(stats.rows,'avg_api_latency_ms',' ms','latency-chart');
   $('answers').innerHTML=stats.analysis.map((a,i)=>`<li><strong>${questions[i]}</strong><br>${escape(a)}</li>`).join('');
   $('slide-provenance').textContent=`${mode.toUpperCase()} · ${tier} · ${stats.suite_count} suites / ${trials} attempted trials. ${mode==='simulated'?'UI fixtures only; no empirical model performance.':trials?'Measured requests; review failure counts.':'No live model results recorded.'}`;
   $('slide-results').innerHTML=`<div class="table-wrap"><table><thead><tr><th>Agent</th><th>Solve rate</th><th>API latency</th><th>Attempt time</th><th>Moves, all</th><th>Moves, solved</th><th>Proven gap</th><th>Diagnostics</th></tr></thead><tbody>${tableRows(stats)}</tbody></table></div>`;
   $('slide-answers').innerHTML=$('answers').innerHTML;
-  $('history').innerHTML=runs.length?runs.map(r=>`<div class="saved-run"><span><b>${escape(r.mode.toUpperCase())}</b> · ${escape(r.tier)} · ${r.puzzle_count} puzzle(s) · ${escape(r.status)}<br>${escape(r.timestamp)} · ${r.id.slice(0,8)}</span><span><button class="secondary replay" data-id="${r.id}" ${busy?'disabled':''}>Replay</button>${['json','csv','steps.csv','requests.csv'].map(f=>`<a href="/api/runs/${r.id}/export/${f}">${f.toUpperCase()}</a>`).join('')}</span></div>`).join(''):'No runs saved. Start a simulated race or suite to exercise the application.';
+  $('history').innerHTML=runs.length?runs.map(r=>`<div class="saved-run"><span><b>${escape(r.mode.toUpperCase())}</b> · ${escape(r.tier)} · ${r.puzzle_count} puzzle(s) · ${escape(r.status)} · ${escape(cost(r.billing))}<br>${escape(r.timestamp)} · ${r.id.slice(0,8)}</span><span><button class="secondary replay" data-id="${r.id}" ${busy?'disabled':''}>Replay</button>${['json','csv','steps.csv','requests.csv'].map(f=>`<a href="/api/runs/${r.id}/export/${f}">${f.toUpperCase()}</a>`).join('')}</span></div>`).join(''):'No runs saved. Start a simulated race or suite to exercise the application.';
   for(const button of document.querySelectorAll('.replay'))button.onclick=()=>safe(async()=>{const run=await api(`/api/runs/${button.dataset.id}`);if(run.status==='RUNNING')throw new Error('Wait for the run to finish before replaying.');queue=run.events.map(e=>({type:e.event,data:e.data}));runId=run.id;modeBadge(run.mode);switchTab('arena');setBusy(true);$('abort').disabled=true;notice('Replaying saved events. Playback does not change recorded timing.');pump();});
 }
 async function safe(action){try{await action();}catch(e){notice(e.message,true);}}
@@ -109,8 +114,8 @@ async function boot(){
   config=await api('/api/config');$('identity').textContent=`${config.student_name} · ${config.student_roll}`;$('readiness').textContent=config.identity_configured?'IDENTITY CONFIGURED · RECORDING STILL REQUIRED':'IDENTITY REQUIRED FOR RECORDING';
   $('mode').querySelector('[value="live"]').disabled=!config.live_enabled;
   for(const button of document.querySelectorAll('.tab'))button.onclick=()=>switchTab(button.dataset.tab);
-  $('generate').onclick=()=>safe(async()=>{$('seed').value=Number($('seed').value)+1;await generate();});
-  $('tier').onchange=()=>safe(generate);$('seed').onchange=()=>safe(generate);
+  $('generate').onclick=()=>safe(async()=>{$('paid-confirm').checked=false;$('seed').value=Number($('seed').value)+1;await generate();});
+  $('tier').onchange=()=>{$('paid-confirm').checked=false;safe(generate);};$('seed').onchange=()=>{$('paid-confirm').checked=false;safe(generate);};
   $('start').onclick=()=>safe(()=>start('race'));$('suite').onclick=()=>safe(()=>start('suite'));
   $('abort').onclick=()=>safe(async()=>{
     if(!runId)return;
@@ -123,7 +128,8 @@ async function boot(){
     if(run.status==='COMPLETED')notice('Playback stopped. The server had already completed; its recorded outcomes are preserved.');
   });
   $('mode').onchange=()=>{modeBadge($('mode').value);drawCards(puzzle?.initial_state||SOLVED);$('paid-confirm').checked=false;updatePlan();};
-  $('puzzles').oninput=updatePlan;
+  $('puzzles').oninput=()=>{$('paid-confirm').checked=false;updatePlan();};
+  $('call-cap').oninput=()=>{$('paid-confirm').checked=false;};
   for(const id of ['stats-mode','stats-tier'])$(id).onchange=()=>safe(refreshStats);
   $('refresh').onclick=()=>safe(refreshStats);
   $('fullscreen').onclick=()=>safe(async()=>{if(!document.fullscreenElement)await document.documentElement.requestFullscreen();else await document.exitFullscreen();});

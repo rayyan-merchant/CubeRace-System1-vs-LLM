@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime, timezone
 from .cube import SOLVED, MOVES, apply, sequence, scramble, shortest_path, inverse
 from .models import MODELS, ModelFailure, Router
+from .billing import run_billing, summarize
 
 
 def puzzle(seed, tier):
@@ -31,15 +32,18 @@ class Manager:
                "timestamp": datetime.now(timezone.utc).isoformat(), "source": "CubeRace: System-1 vs LLM",
                "mode": config.mode, "kind": config.kind, "tier": config.tier,
                "seed": config.seed, "puzzle_count": config.puzzles,
-               "metric": "HTM", "move_limit": 30, "policy_version": "state-action-v1",
+               "metric": "HTM", "move_limit": 30, "policy_version": "state-action-v2-compact",
                "condition": "no-scramble-agent-history-only", "status": "RUNNING",
                "request_policy": {"timeout_seconds": self.settings.timeout,
                                   "retries": self.settings.retries,
-                                  "chat_max_tokens": 2048,
+                                  "claude_reasoning_effort": self.settings.claude_reasoning_effort,
+                                  "chat_max_tokens": self.settings.claude_max_tokens,
                                   "concurrency": self.settings.concurrency},
                "budget": {"used": 0, "cap": config.call_cap}, "races": [], "events": []}
+        run["budget"]["run_id"] = run["id"]
         # Reserve admission before yielding to the proof worker.
-        self.active[run["id"]] = {"run": run, "task": None, "stop": asyncio.Event()}
+        self.active[run["id"]] = {"run": run, "task": None, "stop": asyncio.Event(),
+                                  "blocked_models": {}, "schema_failures": {}}
         try:
             seen_states = set()
             next_seed = config.seed
@@ -68,6 +72,7 @@ class Manager:
             raise
 
     def emit(self, run, event, data):
+        run["billing"] = run_billing(run)
         run["events"].append({"id": len(run["events"]) + 1, "event": event, "data": data})
         self.store.save(run)
 
@@ -76,13 +81,15 @@ class Manager:
         trial["status"] = "RUNNING"
         # Deterministic scripted UI exercise, explicitly unrelated to model quality.
         # An inverse script is used ONLY in simulation, never fed into Router.decide.
-        script = [inverse(m) for m in reversed(race["scramble"])]
-        if index == 1:
-            script = ["U", "U'"] + script
-        if index == 2:
-            script = ["R"] * 30
-        if index == 3:
-            script = ["F", "F'"] + script
+        script = []
+        if run["mode"] == "simulated":
+            script = [inverse(m) for m in reversed(race["scramble"])]
+            if index == 1:
+                script = ["U", "U'"] + script
+            if index == 2:
+                script = ["R"] * 30
+            if index == 3:
+                script = ["F", "F'"] + script
         try:
             while len(trial["moves"]) < 30:
                 if self.active[run["id"]]["stop"].is_set():
@@ -95,7 +102,8 @@ class Manager:
                     move = script[len(trial["moves"]) % len(script)]
                 else:
                     move = await self.router.decide(model, trial["state"], trial["moves"],
-                                                    trial["requests"], run["budget"])
+                                                    trial["requests"], run["budget"],
+                                                    self.active[run["id"]]["schema_failures"])
                     trial["effective_agent_id"] = trial["requests"][-1]["effective_model_id"]
                 if self.active[run["id"]]["stop"].is_set():
                     raise asyncio.CancelledError
@@ -119,11 +127,14 @@ class Manager:
             trial["status"] = "ABORTED"
         except ModelFailure as exc:
             trial["status"], trial["error"] = exc.status, str(exc)
+            if exc.permanent:
+                self.active[run["id"]]["blocked_models"][model.id] = str(exc)
             self.emit(run, "error", {"race": race["index"], "model": index,
                                       "status": exc.status, "message": str(exc)})
         except Exception:
             trial["status"], trial["error"] = "API_ERROR", "Internal trial failure; see local verification"
         finally:
+            trial["billing"] = summarize(trial["requests"])
             trial["elapsed_ms"] = (time.perf_counter() - start) * 1000
             if trial["status"] == "SOLVED" and race["shortest_distance"] is not None:
                 trial["optimality_gap"] = len(trial["moves"]) - race["shortest_distance"]
@@ -134,10 +145,18 @@ class Manager:
             for race in run["races"]:
                 if self.active[run["id"]]["stop"].is_set():
                     break
+                run["budget"]["race_index"] = race["index"]
                 self.emit(run, "race_started", {"race": race["index"], "puzzle": race,
                                                 "mode": run["mode"]})
-                tasks = [asyncio.create_task(self.trial(run, race, t, m, i))
-                         for i, (t, m) in enumerate(zip(race["trials"], MODELS))]
+                tasks = []
+                for i, (t, m) in enumerate(zip(race["trials"], MODELS)):
+                    reason = self.active[run["id"]]["blocked_models"].get(m.id)
+                    if reason:
+                        t.update(status="NOT_RUN", error=f"Earlier permanent incompatibility: {reason}",
+                                 billing=summarize([]))
+                        self.emit(run, "model_finished", {"race": race["index"], "model": i, "trial": t})
+                    else:
+                        tasks.append(asyncio.create_task(self.trial(run, race, t, m, i)))
                 self.active[run["id"]]["trials"] = tasks
                 await asyncio.gather(*tasks)
                 solved = sorted((t for t in race["trials"] if t["status"] == "SOLVED"),
@@ -157,6 +176,7 @@ class Manager:
                                       "COMPLETE" if complete else "INCOMPLETE")
             self.emit(run, "aborted" if aborted else "run_finished", {"status": run["status"]})
         finally:
+            run["billing"] = run_billing(run)
             self.store.save(run)
             self.active.pop(run["id"], None)
 

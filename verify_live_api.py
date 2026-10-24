@@ -10,6 +10,7 @@ from backend.config import Settings
 from backend.models import MODELS, ModelFailure, Router
 from backend.races import puzzle
 from backend.store import Store
+from backend.billing import summarize
 
 
 async def smoke():
@@ -34,6 +35,10 @@ async def smoke():
             print(f"{model.id}: {entry['status']}")
     report = {"mode": "live", "kind": "adapter_smoke_not_benchmark", "timestamp": datetime.now(timezone.utc).isoformat(),
               "source": "CubeRace: System-1 vs LLM", "seed": 2026, "metric": "HTM", "move_limit": 30,
+              "request_policy": {"claude_reasoning_effort": settings.claude_reasoning_effort,
+                                 "chat_max_tokens": settings.claude_max_tokens, "retries": 0},
+              "billing": {**summarize(q for r in results for q in r["requests"]),
+                          "by_model": {r["model_id"]: summarize(r["requests"]) for r in results}},
               "initial_state": state, "results": results, "request_count": budget["used"]}
     Path("data").mkdir(exist_ok=True)
     Path("data/live-smoke.json").write_text(json.dumps(report, indent=2), encoding="utf-8")

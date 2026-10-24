@@ -29,8 +29,13 @@
     "replay",
     "presentation identity",
     "abort",
-    "mobile"
+    "mobile",
+    "paid consent with offline transport",
+    "billing display",
+    "live-mode replay without inference"
   ],
+  "offline_fixture_inference_requests": 4,
+  "real_openrouter_inference_requests": 0,
   "page_errors": [],
   "console_errors": []
 }

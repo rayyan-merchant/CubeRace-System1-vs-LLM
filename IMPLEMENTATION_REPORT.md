@@ -1,6 +1,6 @@
 # CubeRace: System-1 vs LLM — Implementation Report
 
-Date: 2026-10-22. Target: `rayyan-merchant/CubeRace-System1-vs-LLM`, branch `main`.
+Initial implementation: 2026-10-22. Cost optimization review: 2026-10-24. Target: `rayyan-merchant/CubeRace-System1-vs-LLM`, branch `main`.
 Verified source milestone: `c64dd2e` (engine, adapters, orchestration, UI, tests and setup).
 Implementation follows the supplied master brief and all four pages of `assignment-02.pdf`.
 The PDF's recording screenshots were also rendered and inspected; their pictured older
@@ -12,12 +12,12 @@ model names do not override the four assigned IDs in the PDF's requirements tabl
 |---|---|---|
 | Original complete local application | PASS | FastAPI API, vanilla frontend, cube engine, orchestration, analysis, persistence and exports |
 | Legal cube engine / exact primary reference | PASS | 18 legal moves, HTM, independent PyCuber comparisons, complete capped BFS tests through depth 5 |
-| Offline automated tests | PASS | 183 tests; actual output in `docs/evidence/pytest-output.txt` |
+| Offline automated tests | PASS | 196 tests; actual output in `docs/evidence/pytest-output.txt` |
 | Lint and JavaScript parsing | PASS | Ruff output retained; Node checked both JavaScript modules |
 | Full five-puzzle functional benchmark | PASS | 20 simulated trials, zero paid requests, raw JSON and three CSV exports retained |
 | Browser verification | PASS | Real headless Edge race/suite/replay/download/abort flows; no page or console errors |
 | Four assigned API interfaces | PASS with offline fixtures | Official contracts reviewed; exact routes and IDs, schema validation, retry/cap/failure tests |
-| Live routing/account acceptance | BLOCKED | No API key configured; preflight exits BLOCKED before any external request |
+| Live routing/account acceptance | NOT RUN | No paid inference authorized in the cost optimization review |
 | Empirical four-model comparison | BLOCKED | No live trials, performance figures or model winners claimed |
 | Student name and roll | PENDING USER INPUT | Conspicuous placeholders; `.env` settings supported across all views |
 | Required final screen recording | MANUAL / NOT CREATED | Recording checklist and results slide implemented |
@@ -57,7 +57,7 @@ are pinned in the requirements files. No user browser profile was used.
 
 ```text
 python run_verification.py
-183 passed, 1 warning
+196 passed, 1 warning
 All checks passed!
 PASS: five seeded puzzles, 20 simulated trials, zero paid requests; exports saved.
 
@@ -120,8 +120,8 @@ Unexpected effective model IDs fail closed; dated alias equivalence is not assum
    real `STUDENT_NAME` and `STUDENT_ROLL`; restart the local server.
 2. Explicitly authorize the four-call smoke command. Inspect retained response IDs,
    effective IDs and errors in `data/live-smoke.json` before allocating a full suite.
-3. Set a sufficient cumulative budget after accounting for smoke/warm-up calls. With one
-   retry, five primary puzzles have a maximum of 1,200 requests. The UI requires explicit
+3. Set a sufficient cumulative budget after accounting for smoke/warm-up calls. With the
+   new zero-retry default, five primary puzzles have a maximum of 600 requests (604 including smoke). The UI requires explicit
    confirmation and a per-run cap. Token cost is not determined by request count alone.
 4. Run at least five primary puzzles across all four assigned models. Preserve JSON and
    CSV exports. If routes fail, keep the evidence incomplete and report those failures.
@@ -132,3 +132,46 @@ Operational limits: single local server worker/user, snapshots held in SQLite wi
 suite size (25); no hosted authentication, deployment, dollar-denominated spend ceiling,
 statistical significance test or automated final-video submission. Live outputs may be
 malformed, unavailable or unable to solve; those are honest recorded outcomes.
+
+## Targeted cost optimization review — 2026-10-24
+
+Findings: Claude previously hard-coded 2,048 completion tokens with default effort; one
+retry was the default; usage was retained raw but had no cumulative monetary accounting;
+permanent incompatibilities could repeat on subsequent puzzles. Replay/read paths already
+avoided inference and remain explicit read-only demonstrations.
+
+Implemented: fixed configurable `CLAUDE_REASONING_EFFORT=low`, `CLAUDE_MAX_TOKENS=512`,
+zero default retries, compact equivalent state/action payloads, strict schema/model IDs,
+persistent response billing journal, per-model/run/suite cost and token coverage, displayed
+request/cost totals and recommended caps, cleared per-run consent, and run-scoped
+incompatibility skips with accurate `NOT_RUN` counts. Fixed methodology changes are isolated
+from older/different-setting suite aggregates. Existing unknown costs are not rewritten as zero.
+
+The smoke command uses the same Claude settings and journal and remains capped at four
+requests with zero retries. At default settings the approved workflow is at most 604
+requests: four smoke plus 600 for one five-puzzle suite. Recording, viewing, refresh,
+exports and saved-event replay require no new inference. Settings/counters are never
+increased or reset automatically. No model substitution, live solution hints, heuristic
+failure prediction or per-trial adaptive reasoning/output limits were added.
+
+Contract evidence: public OpenRouter metadata was fetched without authentication or
+inference, confirming mandatory reasoning, low effort and supported output parameters.
+Automatic response usage is documented; the legacy chat usage opt-in is deprecated/no-op,
+and no undocumented field is added to Decisions. See the updated contract review.
+The tighter ceiling may truncate output; billed usage is preserved and no automatic retry
+or ceiling increase follows. No billable-token saving or quality improvement is claimed.
+
+Verification for this patch uses intercepted HTTP fixtures, including the 604-request
+upper-bound workflow, usage on errors, unknown/zero costs, budget exhaustion, no-consent
+rejection, schema/permanent error skipping, unchanged fairness, and no inference on reads
+or saved live-mode replay. Browser live-mode checks use dummy credentials and MockTransport;
+they are explicitly not paid OpenRouter evidence. Actual paid calls: zero.
+
+Final patch verification: `python run_verification.py` passed **196 tests** (one existing
+Starlette/AnyIO deprecation warning), Ruff and Node syntax checks, followed by a successful
+five-puzzle / 20-trial simulated suite. `python scripts/verify_browser.py` passed desktop,
+laptop, mobile, consent, billing and saved live-mode replay checks with zero page/console
+errors. Four browser inference-path calls were intercepted locally; no real inference.
+Restart regression confirms pending journal entries remain counted, attributed to their
+run/puzzle and unknown-cost after recovery. Source changes preserve the original engine,
+fixed four IDs, 30 moves and strict schema. No live cost or performance savings verified.

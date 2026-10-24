@@ -27,13 +27,39 @@
         "solve_rate": 100.0,
         "avg_api_latency_ms": null,
         "request_count": 0,
-        "avg_attempt_ms": 466.89948001876473,
+        "avg_attempt_ms": 279.15890000294894,
         "mean_moves_all": 4.4,
         "mean_moves_solved": 4.4,
         "mean_optimality_gap": 0.2,
         "proven_solved_count": 5,
         "malformed": 0,
         "retries": 0,
+        "not_run": 0,
+        "billing": {
+          "request_count": 0,
+          "known_cost_usd": null,
+          "unknown_cost_requests": 0,
+          "cost_complete": true,
+          "total_cost_usd": 0,
+          "tokens": {
+            "prompt_tokens": {
+              "known_total": null,
+              "unknown_requests": 0
+            },
+            "completion_tokens": {
+              "known_total": null,
+              "unknown_requests": 0
+            },
+            "total_tokens": {
+              "known_total": null,
+              "unknown_requests": 0
+            },
+            "reasoning_tokens": {
+              "known_total": null,
+              "unknown_requests": 0
+            }
+          }
+        },
         "statuses": {
           "SOLVED": 5
         }
@@ -48,13 +74,39 @@
         "solve_rate": 100.0,
         "avg_api_latency_ms": null,
         "request_count": 0,
-        "avg_attempt_ms": 726.783339981921,
+        "avg_attempt_ms": 437.78657999355346,
         "mean_moves_all": 6.4,
         "mean_moves_solved": 6.4,
         "mean_optimality_gap": 2.2,
         "proven_solved_count": 5,
         "malformed": 0,
         "retries": 0,
+        "not_run": 0,
+        "billing": {
+          "request_count": 0,
+          "known_cost_usd": null,
+          "unknown_cost_requests": 0,
+          "cost_complete": true,
+          "total_cost_usd": 0,
+          "tokens": {
+            "prompt_tokens": {
+              "known_total": null,
+              "unknown_requests": 0
+            },
+            "completion_tokens": {
+              "known_total": null,
+              "unknown_requests": 0
+            },
+            "total_tokens": {
+              "known_total": null,
+              "unknown_requests": 0
+            },
+            "reasoning_tokens": {
+              "known_total": null,
+              "unknown_requests": 0
+            }
+          }
+        },
         "statuses": {
           "SOLVED": 5
         }
@@ -69,13 +121,39 @@
         "solve_rate": 0.0,
         "avg_api_latency_ms": null,
         "request_count": 0,
-        "avg_attempt_ms": 2096.0417799884453,
+        "avg_attempt_ms": 1336.2087599933147,
         "mean_moves_all": 30,
         "mean_moves_solved": null,
         "mean_optimality_gap": null,
         "proven_solved_count": 0,
         "malformed": 0,
         "retries": 0,
+        "not_run": 0,
+        "billing": {
+          "request_count": 0,
+          "known_cost_usd": null,
+          "unknown_cost_requests": 0,
+          "cost_complete": true,
+          "total_cost_usd": 0,
+          "tokens": {
+            "prompt_tokens": {
+              "known_total": null,
+              "unknown_requests": 0
+            },
+            "completion_tokens": {
+              "known_total": null,
+              "unknown_requests": 0
+            },
+            "total_tokens": {
+              "known_total": null,
+              "unknown_requests": 0
+            },
+            "reasoning_tokens": {
+              "known_total": null,
+              "unknown_requests": 0
+            }
+          }
+        },
         "statuses": {
           "MOVE_LIMIT": 5
         }
@@ -90,19 +168,78 @@
         "solve_rate": 100.0,
         "avg_api_latency_ms": null,
         "request_count": 0,
-        "avg_attempt_ms": 743.0371000431478,
+        "avg_attempt_ms": 469.85342004336417,
         "mean_moves_all": 6.4,
         "mean_moves_solved": 6.4,
         "mean_optimality_gap": 2.2,
         "proven_solved_count": 5,
         "malformed": 0,
         "retries": 0,
+        "not_run": 0,
+        "billing": {
+          "request_count": 0,
+          "known_cost_usd": null,
+          "unknown_cost_requests": 0,
+          "cost_complete": true,
+          "total_cost_usd": 0,
+          "tokens": {
+            "prompt_tokens": {
+              "known_total": null,
+              "unknown_requests": 0
+            },
+            "completion_tokens": {
+              "known_total": null,
+              "unknown_requests": 0
+            },
+            "total_tokens": {
+              "known_total": null,
+              "unknown_requests": 0
+            },
+            "reasoning_tokens": {
+              "known_total": null,
+              "unknown_requests": 0
+            }
+          }
+        },
         "statuses": {
           "SOLVED": 5
         }
       }
     ],
     "suite_count": 1,
+    "excluded_policy_suites": 0,
+    "request_policy": {
+      "timeout_seconds": 30,
+      "retries": 0,
+      "claude_reasoning_effort": "low",
+      "chat_max_tokens": 512,
+      "concurrency": 4
+    },
+    "billing": {
+      "request_count": 0,
+      "known_cost_usd": null,
+      "unknown_cost_requests": 0,
+      "cost_complete": true,
+      "total_cost_usd": 0,
+      "tokens": {
+        "prompt_tokens": {
+          "known_total": null,
+          "unknown_requests": 0
+        },
+        "completion_tokens": {
+          "known_total": null,
+          "unknown_requests": 0
+        },
+        "total_tokens": {
+          "known_total": null,
+          "unknown_requests": 0
+        },
+        "reasoning_tokens": {
+          "known_total": null,
+          "unknown_requests": 0
+        }
+      }
+    },
     "analysis": [
       "Simulated UI fixtures are not evidence of OpenRouter model performance.",
       "Simulated UI fixtures are not evidence of OpenRouter model performance.",

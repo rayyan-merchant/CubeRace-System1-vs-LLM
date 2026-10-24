@@ -110,7 +110,7 @@ async def test_malformed_and_persistent_budget(tmp_path):
     store = Store(path)
     async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(200, json={}))) as client:
         records = []
-        router = Router(Settings(key="test", budget=1), store, client)
+        router = Router(Settings(key="test", budget=1, retries=1), store, client)
         with pytest.raises(ModelFailure) as exc:
             await router.decide(MODELS[0], SOLVED, [], records, {"used": 0, "cap": 10})
         assert exc.value.status == "BUDGET_EXHAUSTED"

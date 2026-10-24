@@ -18,6 +18,7 @@ from .models import MODELS
 from .races import Manager, puzzle
 from .stats import aggregate
 from .store import Store
+from .billing import summarize
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -84,7 +85,11 @@ def create_app(settings=None, transport=None):
             "identity_configured": bool(settings.student_name.strip() and settings.student_roll.strip()),
             "live_enabled": bool(settings.key and settings.allow_live and not settings.mock_mode),
             "default_mode": "simulated", "budget_limit": settings.budget,
-            "budget_used": app.state.store.used(), "retries": settings.retries}
+            "budget_used": app.state.store.used(), "retries": settings.retries,
+            "recommended_race_cap": len(MODELS) * 30 * (1 + settings.retries),
+            "claude_reasoning_effort": settings.claude_reasoning_effort,
+            "claude_max_tokens": settings.claude_max_tokens,
+            "billing": app.state.store.billing()}
 
     @app.get("/api/puzzle")
     async def get_puzzle(seed: int = 2026, tier: Literal["warmup", "primary", "extension"] = "primary"):
@@ -114,11 +119,13 @@ def create_app(settings=None, transport=None):
         run = app.state.store.get(run_id)
         if not run:
             raise HTTPException(404, "Run not found")
+        run["billing"] = app.state.store.run_billing(run)
         return run
 
     @app.get("/api/runs")
     async def runs():
-        return [{k: r[k] for k in ("id", "timestamp", "mode", "tier", "kind", "status", "puzzle_count")}
+        return [{**{k: r[k] for k in ("id", "timestamp", "mode", "tier", "kind", "status", "puzzle_count")},
+                 "billing": app.state.store.run_billing(r)}
                 for r in app.state.store.all()]
 
     @app.get("/api/runs/{run_id}")
@@ -177,6 +184,7 @@ def create_app(settings=None, transport=None):
                         "seed": race["seed"], "tier": race["tier"],
                         "initial_state": race["initial_state"], "scramble": " ".join(race["scramble"]),
                         "model_id": trial["model_id"], "effective_agent_id": trial["effective_agent_id"],
+                        "request_policy": run.get("request_policy"),
                         "status": trial["status"], "shortest_distance": race["shortest_distance"]}
                 if format == "steps.csv":
                     rows.extend({**base, **step} for step in trial["steps"])
@@ -186,7 +194,8 @@ def create_app(settings=None, transport=None):
                     rows.append({**base, "executed_moves": len(trial["moves"]),
                         "moves": " ".join(trial["moves"]), "elapsed_ms": trial["elapsed_ms"],
                         "optimality_gap": trial["optimality_gap"], "rank": trial["rank"],
-                        "request_count": len(trial["requests"])})
+                        "request_count": len(trial["requests"]),
+                        **summarize(trial["requests"])})
         out = io.StringIO(newline="")
         fields = list(dict.fromkeys(k for row in rows for k in row)) or ["mode", "run_id"]
         writer = csv.DictWriter(out, fieldnames=fields)

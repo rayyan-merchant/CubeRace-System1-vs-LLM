@@ -5,6 +5,8 @@ import time
 from dataclasses import dataclass
 import httpx
 from .cube import MOVES, SOLVED
+from .config import Settings
+from .billing import reported
 
 
 @dataclass(frozen=True)
@@ -23,13 +25,12 @@ MODELS = (
 ENDPOINTS = {"decisions": "https://openrouter.ai/api/alpha/decisions",
              "chat": "https://openrouter.ai/api/v1/chat/completions"}
 INSTRUCTIONS = (
-    "Choose the single next move most likely to progress toward the solved cube. "
-    "Use standard Singmaster notation, clockwise when looking directly at the named face. "
-    "Facelets are row-major in URFDLB order with fixed centers. "
-    "Only one legal move may be executed per decision. Maximum 30 moves, half-turn metric."
+    "Choose one move toward the goal. Facelets: row-major URFDLB, fixed centers. "
+    "Singmaster turns: clockwise viewed directly at the named face. "
+    "Half-turn metric (HTM): 180 degrees counts as one move. Limit: 30 moves."
 )
 NAMES = dict(zip("URFDLB", ("upper", "right", "front", "down", "left", "back")))
-CRITERIA = {m: f"Turn the {NAMES[m[0]]} face " +
+CRITERIA = {m: f"{NAMES[m[0]]} face " +
             ("180 degrees" if m.endswith("2") else
              "counterclockwise 90 degrees" if m.endswith("'") else "clockwise 90 degrees")
             for m in MOVES}
@@ -48,17 +49,22 @@ def strict_json(text):
     return value
 
 
-def payload(model, state, history):
+def payload(model, state, history, settings=None):
+    settings = settings or Settings()
     context = {"cube_facelets": state, "recent_moves": list(history),
                "goal_facelets": SOLVED, "moves_remaining": 30 - len(history),
-               "metric": "HTM", "facelet_order": "URFDLB"}
+               "metric": "HTM"}
     question = {"type": "choice", "instructions": INSTRUCTIONS, "criteria": CRITERIA}
     if model.interface == "decisions":
         return {"model": model.id, "state": context, "questions": {"next_move": question}}
     return {"model": model.id, "messages": [
-        {"role": "system", "content": INSTRUCTIONS + ' Return only JSON: {"move":"R"}.'},
-        {"role": "user", "content": json.dumps({"state": context, "question": question})}],
-        "max_tokens": 2048,
+        {"role": "system", "content": "Return one legal move as schema JSON."},
+        {"role": "user", "content": json.dumps({"state": context, "question": question}, separators=(",", ":"))}],
+        "max_tokens": settings.claude_max_tokens,
+        "reasoning": {"effort": settings.claude_reasoning_effort},
+        # Legacy chat opt-in is accepted but deprecated; accounting is now automatic.
+        # The typed Decisions contract does not document this extra request property.
+        "usage": {"include": True},
         "response_format": {"type": "json_schema", "json_schema": {
             "name": "cube_action", "strict": True, "schema": {
                 "type": "object", "properties": {"move": {"type": "string", "enum": list(MOVES)}},
@@ -67,22 +73,34 @@ def payload(model, state, history):
 
 
 class ModelFailure(Exception):
-    def __init__(self, status, message):
+    def __init__(self, status, message, permanent=False):
         self.status = status
+        self.permanent = permanent
         super().__init__(message)
+
+
+class UnsupportedSchema(ValueError):
+    pass
 
 
 def parse(model, body):
     if model.interface == "decisions":
-        answer = body["answers"]["next_move"]
-        if answer["type"] != "choice":
-            raise ValueError("Expected choice answer")
-        move = answer["choice"]
+        try:
+            answer = body["answers"]["next_move"]
+            if not isinstance(answer, dict) or answer.get("type") != "choice" or "choice" not in answer:
+                raise UnsupportedSchema("Expected typed next_move choice answer")
+            move = answer["choice"]
+        except (KeyError, TypeError):
+            raise UnsupportedSchema("Missing Decisions answer envelope")
         metadata = {k: answer.get(k) for k in ("confidence", "probabilities")}
     else:
-        answer = strict_json(body["choices"][0]["message"]["content"])
+        try:
+            content = body["choices"][0]["message"]["content"]
+        except (KeyError, IndexError, TypeError):
+            raise UnsupportedSchema("Missing chat completion envelope")
+        answer = strict_json(content)
         if not isinstance(answer, dict) or set(answer) != {"move"}:
-            raise ValueError("Expected exactly one move property")
+            raise UnsupportedSchema("Expected exactly one move property")
         move, metadata = answer["move"], {"confidence": None, "probabilities": None}
     if not isinstance(move, str) or move not in MOVES:
         raise ValueError("Expected exactly one legal move")
@@ -94,53 +112,93 @@ class Router:
         self.settings, self.store, self.client = settings, store, client
         self.semaphore = asyncio.Semaphore(settings.concurrency)
 
-    async def decide(self, model, state, history, records, run_budget):
+    async def decide(self, model, state, history, records, run_budget, schema_failures=None):
         cfg = self.settings
+        schema_failures = schema_failures if schema_failures is not None else {}
         for retry in range(cfg.retries + 1):
             async with self.semaphore:
-                if run_budget["used"] >= run_budget["cap"] or not self.store.consume(cfg.budget):
+                if run_budget["used"] >= run_budget["cap"]:
+                    raise ModelFailure("BUDGET_EXHAUSTED", "Persistent or per-run request cap reached")
+                request_id = self.store.reserve(cfg.budget, model.id, run_budget.get("run_id"),
+                                                run_budget.get("race_index"), retry)
+                if request_id is None:
                     raise ModelFailure("BUDGET_EXHAUSTED", "Persistent or per-run request cap reached")
                 run_budget["used"] += 1
                 record = {"request_index": len(records) + 1, "retry": retry,
+                          "run_id": run_budget.get("run_id"),
+                          "race_index": run_budget.get("race_index"), "ledger_id": request_id,
                           "requested_model_id": model.id, "effective_model_id": None,
                           "endpoint": ENDPOINTS[model.interface], "http_status": None,
                           "latency_ms": None, "outcome": "PENDING", "usage": None,
-                          "provider": None, "response_id": None}
+                          "provider": None, "response_id": None, "finish_reason": None,
+                          "billing": reported(None)}
                 records.append(record)
                 start = time.perf_counter()
                 try:
                     response = await self.client.post(ENDPOINTS[model.interface],
                         headers={"Authorization": f"Bearer {cfg.key}",
                                  "X-Title": "CubeRace: System-1 vs LLM"},
-                        json=payload(model, state, history), timeout=cfg.timeout)
+                        json=payload(model, state, history, cfg), timeout=cfg.timeout)
                     record["latency_ms"] = (time.perf_counter() - start) * 1000
                     record["http_status"] = response.status_code
+                    # Retain billing even on HTTP errors or unusable action output.
+                    try:
+                        envelope = strict_json(response.text)
+                        if isinstance(envelope, dict):
+                            record["usage"] = envelope.get("usage")
+                            record["billing"] = reported(record["usage"])
+                    except (ValueError, TypeError):
+                        pass
                     if response.status_code >= 400:
+                        schema_failures[model.id] = 0
                         record["outcome"] = "HTTP_ERROR"
                         if response.status_code in (429, 500, 502, 503, 504) and retry < cfg.retries:
                             pass
                         else:
                             status = "UNAVAILABLE" if response.status_code in (400, 402, 404) else "API_ERROR"
-                            raise ModelFailure(status, f"OpenRouter HTTP {response.status_code}; no substitution")
+                            raise ModelFailure(status, f"OpenRouter HTTP {response.status_code}; no substitution",
+                                               permanent=response.status_code in (400, 401, 402, 403, 404, 422))
                     else:
                         try:
                             body = strict_json(response.text)
                             if not isinstance(body, dict):
-                                raise ValueError("Expected response object")
+                                raise UnsupportedSchema("Expected response object")
                             record.update(effective_model_id=body.get("model"), usage=body.get("usage"),
                                           provider=body.get("provider"), response_id=body.get("id"))
+                            error = body.get("error")
+                            if isinstance(error, dict) and error.get("code") in (400, 401, 402, 403, 404, 422):
+                                record["outcome"] = "PROVIDER_ERROR"
+                                raise ModelFailure("UNAVAILABLE", "Provider reports permanent incompatibility", permanent=True)
                             if body.get("model") and body["model"] != model.id:
                                 record["outcome"] = "MODEL_ID_MISMATCH"
-                                raise ModelFailure("UNAVAILABLE", "Effective model ID differs; review routing")
+                                raise ModelFailure("UNAVAILABLE", "Effective model ID differs; review routing", permanent=True)
+                            choices = body.get("choices")
+                            if isinstance(choices, list) and choices and isinstance(choices[0], dict):
+                                record["finish_reason"] = choices[0].get("finish_reason")
+                            if record["finish_reason"] == "length":
+                                schema_failures[model.id] = 0
+                                record["outcome"] = "OUTPUT_LIMIT"
+                                raise ModelFailure("API_ERROR", "Output ceiling reached; no automatic retry or setting increase")
                             move, meta = parse(model, body)
+                            schema_failures[model.id] = 0
                             record.update(meta)
                             record["outcome"] = "VALID"
                             return move
+                        except UnsupportedSchema:
+                            record["outcome"] = "MALFORMED"
+                            record["schema_error"] = True
+                            schema_failures[model.id] = schema_failures.get(model.id, 0) + 1
+                            if schema_failures[model.id] >= 2:
+                                raise ModelFailure("UNAVAILABLE", "Repeated unsupported response envelope; later puzzles NOT_RUN", permanent=True)
+                            if retry == cfg.retries:
+                                raise ModelFailure("API_ERROR", "Unsupported response envelope; no move executed")
                         except (KeyError, ValueError, TypeError, IndexError):
+                            schema_failures[model.id] = 0
                             record["outcome"] = "MALFORMED"
                             if retry == cfg.retries:
                                 raise ModelFailure("API_ERROR", "Malformed structured output; no move executed")
                 except (httpx.TimeoutException, httpx.NetworkError):
+                    schema_failures[model.id] = 0
                     record["latency_ms"] = (time.perf_counter() - start) * 1000
                     record["outcome"] = "TRANSPORT_ERROR"
                     if retry == cfg.retries:
@@ -149,5 +207,7 @@ class Router:
                     record["latency_ms"] = (time.perf_counter() - start) * 1000
                     record["outcome"] = "CANCELLED"
                     raise
+                finally:
+                    self.store.record_request(request_id, record)
             await asyncio.sleep(min(0.25 * 2 ** retry, 2))
         raise ModelFailure("API_ERROR", "No valid decision")

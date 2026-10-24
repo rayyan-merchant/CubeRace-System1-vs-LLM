@@ -1,6 +1,8 @@
 from collections import Counter
 from statistics import mean
 from .models import MODELS
+from .billing import summarize
+import json
 
 
 def avg(items):
@@ -11,10 +13,16 @@ def avg(items):
 def aggregate(runs, mode="live", tier="primary"):
     # Primary suites form the scientific sample; warmups/races/extensions cannot silently pool.
     selected = [r for r in runs if r["mode"] == mode and r["tier"] == tier and r["kind"] == "suite"]
+    # Changing effort/ceilings creates a separate experimental condition, including legacy runs.
+    def condition(run):
+        return json.dumps([run.get("policy_version"), run.get("request_policy")], sort_keys=True)
+    latest = condition(selected[0]) if selected else None
+    excluded = sum(condition(r) != latest for r in selected)
+    selected = [r for r in selected if condition(r) == latest]
     rows = []
     for model in MODELS:
-        trials = [t for r in selected for p in r["races"] for t in p["trials"]
-                  if t["model_id"] == model.id and t["status"] not in ("PENDING", "NOT_RUN", "RUNNING")]
+        planned = [t for r in selected for p in r["races"] for t in p["trials"] if t["model_id"] == model.id]
+        trials = [t for t in planned if t["status"] not in ("PENDING", "NOT_RUN", "RUNNING")]
         solved = [t for t in trials if t["status"] == "SOLVED"]
         requests = [q for t in trials for q in t["requests"]]
         rows.append({"model_id": model.id, "label": model.label,
@@ -31,9 +39,14 @@ def aggregate(runs, mode="live", tier="primary"):
             "proven_solved_count": sum(t["optimality_gap"] is not None for t in solved),
             "malformed": sum(q["outcome"] == "MALFORMED" for q in requests),
             "retries": sum(q["retry"] > 0 for q in requests),
-            "statuses": dict(Counter(t["status"] for t in trials))})
+            "not_run": sum(t["status"] == "NOT_RUN" for t in planned),
+            "billing": summarize(q for t in planned for q in t["requests"]),
+            "statuses": dict(Counter(t["status"] for t in planned))})
     return {"mode": mode, "tier": tier, "kind": "suite", "rows": rows,
-            "suite_count": len(selected), "analysis": analysis(rows, mode),
+            "suite_count": len(selected), "excluded_policy_suites": excluded,
+            "request_policy": selected[0].get("request_policy") if selected else None,
+            "billing": summarize(q for r in selected for p in r["races"] for t in p["trials"] for q in t["requests"]),
+            "analysis": analysis(rows, mode),
             "denominator": "All terminal started trials, including infrastructure failures; NOT_RUN excluded"}
 
 
@@ -42,7 +55,7 @@ def analysis(rows, mode):
     answers = [insufficient] * 5
     if mode != "live":
         return ["Simulated UI fixtures are not evidence of OpenRouter model performance."] * 5
-    sampled = [r for r in rows if r["request_count"]]
+    sampled = [r for r in rows if r["request_count"] and r["avg_api_latency_ms"] is not None]
     if sampled:
         fastest = min(sampled, key=lambda r: r["avg_api_latency_ms"])
         answers[0] = f"Lowest observed mean request latency: {fastest['label']} ({fastest['avg_api_latency_ms']:.1f} ms). Retries and errors included."
