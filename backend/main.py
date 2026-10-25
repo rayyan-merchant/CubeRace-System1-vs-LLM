@@ -38,8 +38,6 @@ class StartRequest(BaseModel):
     def coherent(self):
         if self.kind == "race" and self.puzzles != 1:
             raise ValueError("A race uses one puzzle")
-        if self.kind == "suite" and self.puzzles < 5:
-            raise ValueError("A suite requires at least five puzzles")
         return self
 
 

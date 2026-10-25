@@ -506,3 +506,12 @@ specific PID with `Stop-Process -Id <verified-PID>`. Do not stop all Python proc
 an unverified port owner. If nothing listens on 8000, there is no server to terminate.
 An unexpected process/checkout must be investigated before restarting. No force-pull,
 reset, database deletion or automatic paid retest is part of this procedure.
+
+### Small benchmark suites
+
+Suite size is configurable from 1 to 25 puzzles, including three-puzzle practice runs;
+the default remains five. Saved results and tables retain their actual puzzle/trial
+counts. A smaller suite does not by itself fulfill the assignment's five-puzzle benchmark
+requirement. With four models, 30 actions and zero retries, three puzzles recommend a
+360-request cap. A lower explicit cap (such as 120) is permitted but can exhaust before
+all trials finish; it never reduces the 30-action allowance or silently raises the budget.

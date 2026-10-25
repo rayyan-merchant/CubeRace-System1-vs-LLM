@@ -76,7 +76,7 @@ def test_full_five_puzzle_suite_sse_and_exports(client):
 
 def test_explicit_live_gate_and_input_validation(client):
     assert client.post("/api/runs", json={"mode": "live", "confirm_paid_calls": True, "call_cap": 4}).status_code == 409
-    for body in ({"max_moves": 60}, {"kind": "suite", "puzzles": 4}, {"puzzles": 2},
+    for body in ({"max_moves": 60}, {"kind": "suite", "puzzles": 0}, {"kind": "suite", "puzzles": 26}, {"puzzles": 2},
                  {"tier": "unknown"}, {"seed": -1}, {"mode": "mock"}):
         assert client.post("/api/runs", json=body).status_code == 422
     assert client.get("/api/runs/not-real").status_code == 404
@@ -165,3 +165,32 @@ def test_restart_recovery(tmp_path):
     assert store.get("x")["status"] == "INTERRUPTED"
     assert store.get("x")["races"][0]["trials"][0]["status"] == "ABORTED"
     store.close()
+
+@pytest.mark.parametrize('count', [1, 3, 4])
+def test_small_suite_runs_with_actual_puzzle_count(client, count):
+    result = client.post('/api/runs', json={'kind': 'suite', 'puzzles': count, 'seed': 2026})
+    assert result.status_code == 201
+    run = wait_done(client, result.json()['id'])
+    assert run['status'] == 'COMPLETED'
+    assert run['puzzle_count'] == count and len(run['races']) == count
+    assert all(len(r['trials']) == 4 for r in run['races'])
+    stats = client.get('/api/stats?mode=simulated').json()
+    assert all(row['planned'] == count for row in stats['rows'])
+
+
+def test_three_puzzle_live_suite_accepts_user_request_with_mocked_provider(tmp_path):
+    seen = []
+    def handler(request):
+        seen.append(request)
+        return httpx.Response(502, json={'error': {'message': 'Offline gateway fixture'}})
+    cfg = Settings(database=str(tmp_path / 'three.db'), allow_live=True, mock_mode=False, key='offline')
+    with TestClient(create_app(cfg, httpx.MockTransport(handler))) as client:
+        result = client.post('/api/runs', json={'mode': 'live', 'kind': 'suite', 'puzzles': 3,
+            'tier': 'primary', 'seed': 2026, 'call_cap': 120, 'confirm_paid_calls': True})
+        assert result.status_code == 201
+        run = wait_done(client, result.json()['id'])
+        assert len(run['races']) == 3 and run['puzzle_count'] == 3
+        assert len(seen) == 12
+        assert all(len(r['trials']) == 4 for r in run['races'])
+        assert run['budget']['used'] == 12
+        assert all(t['status'] == 'API_ERROR' for r in run['races'] for t in r['trials'])

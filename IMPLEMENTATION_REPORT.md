@@ -529,3 +529,18 @@ requests, and no page/console errors. Raw browser evidence is under ignored
 requests remaining under the unchanged configured cap. This is a request cap, not a USD
 spending cap. Public live diagnostic evidence is in
 `docs/evidence/direct-openai-refusal-investigation.json`; raw reports remain local.
+
+## Configurable small suites
+
+Removed the five-puzzle API minimum and aligned the UI with the existing 1–25 puzzle
+schema. Three-puzzle suites now work; the default remains five. The assignment's required
+sample and existing analysis threshold remain documented and unchanged. Actual puzzle
+counts, per-model 30-action allowances, paid consent, budget exhaustion and statistics
+continue to use the selected size. Three puzzles recommend 360 requests with zero retries;
+an explicitly lower cap is honored and can produce incomplete trials.
+
+Validation: 422 tests passed (one existing dependency deprecation warning), Ruff and Node
+checks passed. An isolated Edge browser completed a three-puzzle simulated suite with
+no page errors. A mocked live API test accepted the exact reported three-puzzle request
+and retained all 12 model trials. No paid inference occurred. Screenshot retained locally
+at `data/three-puzzle-verification/three-puzzle-analysis.png`.
