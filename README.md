@@ -215,6 +215,25 @@ they do not request that second move. Diagnostics do not replace the final five-
 four-model assignment benchmark, which still includes Claude. Offline fixtures establish
 implementation correctness, not improved external model accuracy or lower billed costs.
 
+### Optional direct OpenAI Luna diagnostic
+
+An optional **direct OpenAI Luna** diagnostic uses the native Decisions API, the frozen
+v4 observation policy, and these same two one-turn states. It never replaces the assigned
+OpenRouter adapter or enters assignment benchmark statistics:
+
+```powershell
+# Free preview; no credentials or HTTP needed:
+.venv\Scripts\python.exe verify_luna_openai.py
+# Only after explicit approval: at most TWO paid direct OpenAI requests, no retries:
+.venv\Scripts\python.exe verify_luna_openai.py --confirm-paid
+```
+
+It requires server-side `OPENAI_API_KEY` plus the existing live/zero-retry controls;
+no OpenRouter key is required. Calls consume the persistent request cap under the distinct
+`openai-direct/gpt-6-luna` ledger identity. Timestamped reports go to `data/direct-openai/`.
+Native costs remain unknown unless reported. Direct-provider charges are outside any
+OpenRouter key spending limit. See [native contract, safeguards and evidence boundaries](docs/DIRECT_OPENAI_LUNA_DIAGNOSTIC.md).
+
 ### Reported billing, not estimated spending
 
 Decisions usage `input_tokens` / `output_tokens` normalizes to prompt/completion counts;

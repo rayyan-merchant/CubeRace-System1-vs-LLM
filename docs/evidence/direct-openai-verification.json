@@ -1,0 +1,163 @@
+{
+  "source": "CubeRace: System-1 vs LLM",
+  "mode": "offline_verification_not_model_evaluation",
+  "timestamp": "2026-10-25T16:32:36.565000+00:00",
+  "feature": "optional direct OpenAI Decisions diagnostic",
+  "diagnostic_policy": "state-action-v4-facegrids",
+  "assignment_policy_unchanged": "state-action-v5-permutations",
+  "endpoint": "https://api.openai.com/v1/decisions",
+  "requested_model": "gpt-6-luna",
+  "full_regression_tests_passed": 413,
+  "native_tests_after_final_null_error_adjustment": 53,
+  "existing_deprecation_warnings": 1,
+  "ruff": "passed",
+  "node_syntax_and_regression": "passed",
+  "isolated_simulated_suite": {
+    "puzzles": 5,
+    "trials": 20,
+    "passed": true
+  },
+  "browser": {
+    "mode": "simulated",
+    "source": "actual headless browser on isolated localhost",
+    "checks": [
+      {
+        "viewport": [
+          1366,
+          768
+        ],
+        "horizontal_overflow": false,
+        "arena_bottom_px": 725
+      },
+      {
+        "viewport": [
+          1920,
+          1080
+        ],
+        "horizontal_overflow": false,
+        "arena_bottom_px": 917
+      },
+      {
+        "views": [
+          "analysis",
+          "presentation",
+          "fullscreen"
+        ],
+        "viewport": [
+          1366,
+          768
+        ],
+        "identity_visible": true,
+        "desktop_tables_unclipped": true,
+        "prefix": ""
+      },
+      {
+        "views": [
+          "analysis",
+          "presentation",
+          "fullscreen"
+        ],
+        "viewport": [
+          1920,
+          1080
+        ],
+        "identity_visible": true,
+        "desktop_tables_unclipped": true,
+        "prefix": ""
+      },
+      {
+        "views": [
+          "analysis",
+          "presentation",
+          "fullscreen"
+        ],
+        "viewport": [
+          1366,
+          768
+        ],
+        "identity_visible": true,
+        "desktop_tables_unclipped": true,
+        "prefix": "offline-live-errors-"
+      },
+      {
+        "views": [
+          "analysis",
+          "presentation",
+          "fullscreen"
+        ],
+        "viewport": [
+          1920,
+          1080
+        ],
+        "identity_visible": true,
+        "desktop_tables_unclipped": true,
+        "prefix": "offline-live-errors-"
+      }
+    ],
+    "flows": [
+      "initial arena",
+      "race",
+      "30 cap",
+      "five-puzzle suite",
+      "analysis",
+      "raw download",
+      "replay",
+      "all-view sticky identity",
+      "fullscreen identity",
+      "empty results",
+      "dynamic slide context",
+      "four assigned names",
+      "unclipped desktop tables",
+      "scramble controls",
+      "six-face expansion",
+      "running controls",
+      "abort",
+      "mobile",
+      "paid consent with offline transport",
+      "API failure states",
+      "NOT_RUN denominators",
+      "billing display",
+      "live-mode replay without inference",
+      "dated IDs through browser Start",
+      "four independent 30-action trials",
+      "completed live fixture replay without inference"
+    ],
+    "offline_fixture_inference_requests": 128,
+    "real_openrouter_inference_requests": 0,
+    "page_errors": [],
+    "console_errors": []
+  },
+  "native_test_cases": [
+    "exact frozen v4 context and all 18 actions",
+    "native input_json and questions/answers arrays",
+    "all legal actions and strict illegal-action rejection",
+    "native probability metadata validation",
+    "typed refusal",
+    "null optional error field",
+    "HTTP errors and request IDs",
+    "credential reflection redaction",
+    "missing/wrong model identity",
+    "no redirect following or provider fallback",
+    "two-request ceiling and zero retries",
+    "consent/key/live/mock/budget/active-run guards",
+    "persistent counter across invocations",
+    "cancellation evidence and unknown billing",
+    "native usage and reasoning accounting",
+    "timestamped report preservation",
+    "historical OpenRouter records and aggregate isolation"
+  ],
+  "real_openai_inference_requests": 0,
+  "real_openrouter_inference_requests": 0,
+  "live_contract_tested": false,
+  "live_account_availability": "not_verified",
+  "native_performance": "not_measured",
+  "provider_reported_cost": "unknown_without_live_response",
+  "production_database_logical_sha256_before_after": "285c05458f6fcdce1e87be63ad89959810f99083c745cdfed542d4f85fa1b54b",
+  "production_counter_before_after": 98,
+  "private_env_modified": false,
+  "official_sources": [
+    "https://developers.openai.com/api/docs/guides/decisions",
+    "https://developers.openai.com/api/reference/resources/decisions/methods/create"
+  ],
+  "local_raw_evidence": "data/direct-openai-verification (ignored; prior evidence preserved)"
+}

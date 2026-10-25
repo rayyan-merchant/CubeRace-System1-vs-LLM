@@ -468,3 +468,38 @@ Detailed [investigation and exact v5 addition](docs/V4_DIAGNOSTIC_AUDIT_AND_V5.m
 [token comparison](docs/evidence/prompt-v5-size-comparison.json) and
 [verification summary](docs/evidence/prompt-v5-verification.json) are retained.
 Raw local verification outputs/screenshots are in ignored `data/prompt-v5-verification/`.
+
+### Optional native OpenAI Luna diagnostic
+
+`verify_luna_openai.py` adds an explicitly opt-in, separate native diagnostic at
+`https://api.openai.com/v1/decisions`, requesting only `gpt-6-luna` with server-side
+`OPENAI_API_KEY`. The native input-json/question/choice/answer-array contract was checked
+against the official OpenAI guide and API reference; it was not exercised on a live account.
+The two existing one-turn states, exact frozen v4 state/instructions and all 18 ordered
+action definitions are translated without adding v5 rules or solution information.
+
+Default invocation is a free preview without database access or HTTP. `--confirm-paid`
+allows at most two requests, no retries, no redirects or fallback, and requires the shared
+live/zero-retry settings plus a native key. Each attempted call consumes the existing
+persistent budget under `openai-direct/gpt-6-luna`. Reports are uniquely timestamped under
+ignored `data/direct-openai/`, with no benchmark run insertion or OpenRouter adapter change.
+Requested/effective identity, provider, native probabilities, confidence, request latency,
+HTTP/API errors, request ID and native token usage are retained. Refusals and NOT_RUN
+remain separate; model-selected moves are strictly validated and never corrected.
+Missing USD costs remain unknown. Native reasoning details are mapped only in the local
+accounting copy, while original usage is retained. Reflected credentials are redacted
+before persistence; authorization headers and actual keys are never written to reports.
+Cancellation preserves charged-request accounting and partial evidence.
+
+Verification: the full offline regression run passed **413 tests**, Ruff, Node syntax/
+regression checks, and the isolated simulated suite. Browser checks passed with 128
+intercepted calls and no page/console errors. After the final optional-null-error handling
+adjustment, all **53 native diagnostic tests** passed again. One existing Starlette/AnyIO
+deprecation warning remains. Production database logical hashes match the starting
+snapshot and the persistent request counter remains 98. The private `.env` was not
+modified; `.env.example` adds only an empty optional native-key slot. No paid OpenAI or
+OpenRouter inference was made, and no native API availability or solving result is claimed.
+
+See [native contract, commands and evidence boundaries](docs/DIRECT_OPENAI_LUNA_DIAGNOSTIC.md)
+and the [offline verification summary](docs/evidence/direct-openai-verification.json).
+Raw local outputs/screenshots remain under ignored `data/direct-openai-verification/`.
