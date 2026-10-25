@@ -1,0 +1,144 @@
+{
+  "source": "CubeRace: System-1 vs LLM",
+  "policy_version": "state-action-v5-permutations",
+  "timestamp": "2026-10-25T15:19:41.932577+00:00",
+  "mode": "offline_verification_not_model_evaluation",
+  "pytest": {
+    "passed": 360,
+    "warnings": 1,
+    "warning": "Existing Starlette/AnyIO BlockingPortal deprecation"
+  },
+  "ruff": "passed",
+  "node_syntax": "passed",
+  "node_start_abort_regression": "passed",
+  "isolated_simulated_suite": {
+    "puzzles": 5,
+    "trials": 20,
+    "passed": true
+  },
+  "browser": {
+    "mode": "simulated",
+    "source": "actual headless browser on isolated localhost",
+    "checks": [
+      {
+        "viewport": [
+          1366,
+          768
+        ],
+        "horizontal_overflow": false,
+        "arena_bottom_px": 725
+      },
+      {
+        "viewport": [
+          1920,
+          1080
+        ],
+        "horizontal_overflow": false,
+        "arena_bottom_px": 917
+      },
+      {
+        "views": [
+          "analysis",
+          "presentation",
+          "fullscreen"
+        ],
+        "viewport": [
+          1366,
+          768
+        ],
+        "identity_visible": true,
+        "desktop_tables_unclipped": true,
+        "prefix": ""
+      },
+      {
+        "views": [
+          "analysis",
+          "presentation",
+          "fullscreen"
+        ],
+        "viewport": [
+          1920,
+          1080
+        ],
+        "identity_visible": true,
+        "desktop_tables_unclipped": true,
+        "prefix": ""
+      },
+      {
+        "views": [
+          "analysis",
+          "presentation",
+          "fullscreen"
+        ],
+        "viewport": [
+          1366,
+          768
+        ],
+        "identity_visible": true,
+        "desktop_tables_unclipped": true,
+        "prefix": "offline-live-errors-"
+      },
+      {
+        "views": [
+          "analysis",
+          "presentation",
+          "fullscreen"
+        ],
+        "viewport": [
+          1920,
+          1080
+        ],
+        "identity_visible": true,
+        "desktop_tables_unclipped": true,
+        "prefix": "offline-live-errors-"
+      }
+    ],
+    "flows": [
+      "initial arena",
+      "race",
+      "30 cap",
+      "five-puzzle suite",
+      "analysis",
+      "raw download",
+      "replay",
+      "all-view sticky identity",
+      "fullscreen identity",
+      "empty results",
+      "dynamic slide context",
+      "four assigned names",
+      "unclipped desktop tables",
+      "scramble controls",
+      "six-face expansion",
+      "running controls",
+      "abort",
+      "mobile",
+      "paid consent with offline transport",
+      "API failure states",
+      "NOT_RUN denominators",
+      "billing display",
+      "live-mode replay without inference",
+      "dated IDs through browser Start",
+      "four independent 30-action trials",
+      "completed live fixture replay without inference"
+    ],
+    "offline_fixture_inference_requests": 128,
+    "real_openrouter_inference_requests": 0,
+    "page_errors": [],
+    "console_errors": []
+  },
+  "permutation_verification": {
+    "actions": 18,
+    "full_unique_sticker_mappings": "passed",
+    "independent_pycuber_scrambled_transitions": "passed",
+    "v4_frozen_payload_baseline": "passed"
+  },
+  "production_database_logical_sha256_before_after": "285c05458f6fcdce1e87be63ad89959810f99083c745cdfed542d4f85fa1b54b",
+  "original_v4_diagnostic_unchanged": true,
+  "persistent_counter_before_after": 98,
+  "real_openrouter_inference_requests": 0,
+  "model_accuracy_improvement": "not_measured",
+  "provider_token_overhead": "unknown",
+  "local_proxy_token_overhead": 148,
+  "luna_502_root_cause": "not_recoverable_from_retained_records",
+  "local_raw_evidence": "data/prompt-v5-verification/full and browser (ignored; prior evidence preserved)"
+}

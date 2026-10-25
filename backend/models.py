@@ -7,6 +7,7 @@ import httpx
 from .cube import MOVES, FACES
 from .config import Settings
 from .billing import reported
+from .turn_rules import TURN_RULES, RULES_VERSION
 
 
 @dataclass(frozen=True)
@@ -30,7 +31,8 @@ ALLOWED_EFFECTIVE_IDS = {
     "anthropic/claude-opus-5.5": {"anthropic/claude-opus-5.5"},
 }
 HISTORY_WINDOW = 6
-POLICY_VERSION = "state-action-v4-facegrids"
+V4_POLICY_VERSION = "state-action-v4-facegrids"
+POLICY_VERSION = "state-action-v5-permutations"
 FACE_ORIENTATION = {"U": "B/R", "R": "U/B", "F": "U/R",
                     "D": "F/R", "L": "U/F", "B": "U/L"}
 
@@ -41,12 +43,13 @@ def request_policy(settings):
             "chat_max_tokens": settings.claude_max_tokens, "concurrency": settings.concurrency,
             "history_window": HISTORY_WINDOW, "history_policy": "last-six-executed-agent-moves",
             "state_encoding": "URFDLB-row-major-slash-grids-v1",
+            "turn_rules_version": RULES_VERSION,
             "effective_id_policy": "explicit-allowlist-2026-10-25"}
 
 
 ENDPOINTS = {"decisions": "https://openrouter.ai/api/alpha/decisions",
              "chat": "https://openrouter.ai/api/v1/chat/completions"}
-INSTRUCTIONS = (
+V4_INSTRUCTIONS = (
     "Choose one move to solve all six faces within moves_remaining. "
     "Goal: each face matches its center. Letters denote fixed-center colors "
     "(URFDLB=up/right/front/down/left/back). "
@@ -56,6 +59,7 @@ INSTRUCTIONS = (
     "Turns: degrees, CW clockwise, CCW counterclockwise, viewed at the named face. "
     "HTM: each listed turn=1 move; 30 max."
 )
+INSTRUCTIONS = V4_INSTRUCTIONS + TURN_RULES
 NAMES = dict(zip(FACES, ("up", "right", "front", "down", "left", "back")))
 CRITERIA = {m: f"{NAMES[m[0]]} " +
             ("180" if m.endswith("2") else "90 CCW" if m.endswith("'") else "90 CW")
@@ -75,14 +79,17 @@ def strict_json(text):
     return value
 
 
-def payload(model, state, history, settings=None):
+def payload(model, state, history, settings=None, *, policy_version=POLICY_VERSION):
+    if policy_version not in (V4_POLICY_VERSION, POLICY_VERSION):
+        raise ValueError("Unknown prompt policy")
     settings = settings or Settings()
     context = {"cube_facelets": state,
                "faces": {f: "/".join(state[i:i + 3] for i in range(n * 9, n * 9 + 9, 3))
                          for n, f in enumerate(FACES)},
                "recent_moves": list(history[-HISTORY_WINDOW:]),
                "moves_remaining": 30 - len(history)}
-    question = {"type": "choice", "instructions": INSTRUCTIONS, "criteria": CRITERIA}
+    question = {"type": "choice", "instructions": (
+        V4_INSTRUCTIONS if policy_version == V4_POLICY_VERSION else INSTRUCTIONS), "criteria": CRITERIA}
     if model.interface == "decisions":
         return {"model": model.id, "state": context, "questions": {"next_move": question}}
     return {"model": model.id, "messages": [
@@ -161,6 +168,7 @@ class Router:
                           "provider": None, "response_id": None, "finish_reason": None,
                           "billing": reported(None)}
                 record.update(policy_version=POLICY_VERSION, history_window=HISTORY_WINDOW,
+                              turn_rules_version=RULES_VERSION,
                               state_encoding="URFDLB-row-major-slash-grids-v1",
                               model_visible_history=list(history[-HISTORY_WINDOW:]),
                               moves_remaining=30 - len(history))

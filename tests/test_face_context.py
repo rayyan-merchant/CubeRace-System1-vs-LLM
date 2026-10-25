@@ -69,7 +69,7 @@ def test_equivalent_compact_context_and_unchanged_settings(length):
 
 
 def test_new_condition_excludes_old_policy_without_mutation():
-    assert POLICY_VERSION == "state-action-v4-facegrids"
+    assert POLICY_VERSION == "state-action-v5-permutations"
     assert request_policy(Settings())["state_encoding"] == "URFDLB-row-major-slash-grids-v1"
     base = {"mode": "live", "kind": "suite", "tier": "primary", "puzzle_count": 5,
             "races": [], "request_policy": request_policy(Settings())}

@@ -1,0 +1,236 @@
+{
+  "source_report": "data/cube-diagnostic-depth1-20261025T141601182507Z-4c4575df.json",
+  "source_sha256": "3d97c3180d279a0a7a3837074b47099e22f0cef94cb744538212d3162133624c",
+  "policy_version": "state-action-v4-facegrids",
+  "diagnostic_id": "diagnostic-4c20fa8a2c154a9797d1c3ae4c4575df",
+  "timestamp": "2026-10-25T14:16:01.182507+00:00",
+  "planned": 6,
+  "valid": 4,
+  "correct_first_actions": 0,
+  "http_errors": 2,
+  "rows": [
+    {
+      "case_id": "depth1-case1",
+      "model_id": "typesafe/jev-1.13",
+      "selected_action": "U2",
+      "http_status": 200,
+      "outcome": "VALID",
+      "ledger_id": 93,
+      "latency_ms": 2828.4074000002875,
+      "selected_probability": 0.18000000000000002,
+      "selected_response_confidence": 0.13,
+      "correct_action_probability": 0.02,
+      "correct_action_competition_rank": 11,
+      "correct_action_rank_range": [
+        11,
+        14
+      ],
+      "probability_sum": 0.9900000000000003
+    },
+    {
+      "case_id": "depth1-case1",
+      "model_id": "openai/gpt-6-luna-decisions",
+      "selected_action": null,
+      "http_status": 502,
+      "outcome": "HTTP_ERROR",
+      "ledger_id": 94,
+      "latency_ms": 1297.9004999997414,
+      "selected_probability": null,
+      "selected_response_confidence": null,
+      "correct_action_probability": null,
+      "correct_action_competition_rank": null,
+      "correct_action_rank_range": null,
+      "probability_sum": null
+    },
+    {
+      "case_id": "depth1-case1",
+      "model_id": "cloudflare/clef",
+      "selected_action": "U'",
+      "http_status": 200,
+      "outcome": "VALID",
+      "ledger_id": 95,
+      "latency_ms": 1467.4709999999322,
+      "selected_probability": 0.2657,
+      "selected_response_confidence": 0.2225,
+      "correct_action_probability": 0.0492,
+      "correct_action_competition_rank": 6,
+      "correct_action_rank_range": [
+        6,
+        6
+      ],
+      "probability_sum": 1.0003
+    },
+    {
+      "case_id": "depth1-case2",
+      "model_id": "typesafe/jev-1.13",
+      "selected_action": "U2",
+      "http_status": 200,
+      "outcome": "VALID",
+      "ledger_id": 96,
+      "latency_ms": 1102.716400000645,
+      "selected_probability": 0.15,
+      "selected_response_confidence": 0.1,
+      "correct_action_probability": 0.08,
+      "correct_action_competition_rank": 4,
+      "correct_action_rank_range": [
+        4,
+        6
+      ],
+      "probability_sum": 1.0000000000000002
+    },
+    {
+      "case_id": "depth1-case2",
+      "model_id": "openai/gpt-6-luna-decisions",
+      "selected_action": null,
+      "http_status": 502,
+      "outcome": "HTTP_ERROR",
+      "ledger_id": 97,
+      "latency_ms": 775.3804000003583,
+      "selected_probability": null,
+      "selected_response_confidence": null,
+      "correct_action_probability": null,
+      "correct_action_competition_rank": null,
+      "correct_action_rank_range": null,
+      "probability_sum": null
+    },
+    {
+      "case_id": "depth1-case2",
+      "model_id": "cloudflare/clef",
+      "selected_action": "R'",
+      "http_status": 200,
+      "outcome": "VALID",
+      "ledger_id": 98,
+      "latency_ms": 932.3724000005313,
+      "selected_probability": 0.1132,
+      "selected_response_confidence": 0.061,
+      "correct_action_probability": 0.051,
+      "correct_action_competition_rank": 9,
+      "correct_action_rank_range": [
+        9,
+        10
+      ],
+      "probability_sum": 1.0001
+    }
+  ],
+  "billing": {
+    "request_count": 6,
+    "known_cost_usd": 0.00012978,
+    "total_token_sources": {
+      "provider": 0,
+      "derived": 4
+    },
+    "unknown_cost_requests": 2,
+    "cost_complete": false,
+    "total_cost_usd": null,
+    "tokens": {
+      "prompt_tokens": {
+        "known_total": 3090,
+        "unknown_requests": 2
+      },
+      "completion_tokens": {
+        "known_total": 314,
+        "unknown_requests": 2
+      },
+      "total_tokens": {
+        "known_total": 3404,
+        "unknown_requests": 2
+      },
+      "reasoning_tokens": {
+        "known_total": null,
+        "unknown_requests": 6
+      }
+    },
+    "by_model": {
+      "typesafe/jev-1.13": {
+        "request_count": 2,
+        "known_cost_usd": 7.098e-05,
+        "total_token_sources": {
+          "provider": 0,
+          "derived": 2
+        },
+        "unknown_cost_requests": 0,
+        "cost_complete": true,
+        "total_cost_usd": 7.098e-05,
+        "tokens": {
+          "prompt_tokens": {
+            "known_total": 1690,
+            "unknown_requests": 0
+          },
+          "completion_tokens": {
+            "known_total": 314,
+            "unknown_requests": 0
+          },
+          "total_tokens": {
+            "known_total": 2004,
+            "unknown_requests": 0
+          },
+          "reasoning_tokens": {
+            "known_total": null,
+            "unknown_requests": 2
+          }
+        }
+      },
+      "openai/gpt-6-luna-decisions": {
+        "request_count": 2,
+        "known_cost_usd": null,
+        "total_token_sources": {
+          "provider": 0,
+          "derived": 0
+        },
+        "unknown_cost_requests": 2,
+        "cost_complete": false,
+        "total_cost_usd": null,
+        "tokens": {
+          "prompt_tokens": {
+            "known_total": null,
+            "unknown_requests": 2
+          },
+          "completion_tokens": {
+            "known_total": null,
+            "unknown_requests": 2
+          },
+          "total_tokens": {
+            "known_total": null,
+            "unknown_requests": 2
+          },
+          "reasoning_tokens": {
+            "known_total": null,
+            "unknown_requests": 2
+          }
+        }
+      },
+      "cloudflare/clef": {
+        "request_count": 2,
+        "known_cost_usd": 5.88e-05,
+        "total_token_sources": {
+          "provider": 0,
+          "derived": 2
+        },
+        "unknown_cost_requests": 0,
+        "cost_complete": true,
+        "total_cost_usd": 5.88e-05,
+        "tokens": {
+          "prompt_tokens": {
+            "known_total": 1400,
+            "unknown_requests": 0
+          },
+          "completion_tokens": {
+            "known_total": 0,
+            "unknown_requests": 0
+          },
+          "total_tokens": {
+            "known_total": 1400,
+            "unknown_requests": 0
+          },
+          "reasoning_tokens": {
+            "known_total": null,
+            "unknown_requests": 2
+          }
+        }
+      }
+    }
+  },
+  "interpretation": "Confidence belongs to the response distribution/selected choice, not the probability that an action solves. Ranks use competition ranking; tied ranges shown. No correct actions or oracle data are provided to model requests.",
+  "luna_evidence_limit": "Both HTTP 502 records lack response body, provider error code/message, effective model ID and provider request ID. Existing logs contain no diagnostic error body. Exact upstream cause cannot be recovered. No paid calls were made to investigate.",
+  "luna_documentation": "https://github.com/OpenRouterTeam/docs/blob/main/api_reference/errors-and-debugging.mdx"
+}

@@ -167,14 +167,18 @@ information through compact JSON. Action definitions share degree/CW/CCW convent
 The redundant solved-state string and metric field are omitted: the instructions define
 the goal (every face matches its fixed center) and HTM once.
 
-The fixed policy is `state-action-v4-facegrids`. Saved runs record the history window, Claude
+The fixed policy is `state-action-v5-permutations`. Saved runs record the history window, Claude
 settings and identity-allowlist version; request records include their visible move history,
 window, remaining allowance and policy version. Old/full-history or different-setting suites
 are not pooled with the new condition. Analysis selects the newest saved suite's condition
 and shows exclusions.
 
-Grid orientations, the exact shared prompt, size measurements and diagnostic methodology
-are documented in [PROMPT_POLICY_V4.md](docs/PROMPT_POLICY_V4.md). Restart an existing server
+v5 appends general sticker-permutation rules to v4, shared by all four models. It supplies
+no state-specific successor, scoring heuristic, recommendation or solution. The saved v4
+diagnostic audit, exact addition, token overhead and Luna 502 limits are documented in
+[V4_DIAGNOSTIC_AUDIT_AND_V5.md](docs/V4_DIAGNOSTIC_AUDIT_AND_V5.md).
+The [v4 baseline](docs/PROMPT_POLICY_V4.md) remains intact and is not pooled with v5.
+Restart an existing server
 before using the revised policy; `python preflight.py` detects old loaded source.
 
 ### First-action diagnostics (separate from the assignment benchmark)

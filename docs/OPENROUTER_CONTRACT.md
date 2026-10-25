@@ -94,7 +94,7 @@ No request-count ceiling guarantees a dollar total or complete five-puzzle evide
 
 ## Observation policy v4 (offline verified)
 
-New requests use `state-action-v4-facegrids`: the authoritative facelet string plus lossless
+The retained v4 baseline uses `state-action-v4-facegrids`: the authoritative facelet string plus lossless
 slash-separated labeled face grids and exact top/right viewing orientations. Shared
 instructions retain the solved goal and HTM; redundant `goal_facelets` and `metric` input
 fields are removed. All 18 action definitions remain, with common degree/CW/CCW rules.
@@ -103,3 +103,19 @@ content with unchanged low/1,024 strict JSON settings. See [policy](PROMPT_POLIC
 for the exact prompt and the measured local token-proxy increase. There was no new live
 contract test or model-performance validation. A separate, opt-in diagnostic prepares two
 first-action states for the three Decisions models only, at most six requests, no retries.
+
+## General turn mechanics v5 (offline verified)
+
+New requests use `state-action-v5-permutations`, appending general source-to-destination
+sticker cycles to the unchanged v4 instructions. No API fields, model IDs, settings or
+response contracts change. Tests reconstruct every engine permutation from the rules and
+compare against an independent library; no state-specific successor or solver hint enters
+the payload. The local token proxy increases by 148; actual provider usage is unmeasured.
+See the [v4 diagnostic audit and v5 policy](V4_DIAGNOSTIC_AUDIT_AND_V5.md).
+
+The existing v4 diagnostic's Luna requests returned HTTP 502 before action parsing or
+effective-ID validation. [OpenRouter's official error documentation source](https://github.com/OpenRouterTeam/docs/blob/main/api_reference/errors-and-debugging.mdx)
+describes 502 as a model being down or an invalid upstream response. Existing logs/journal
+do not retain those error bodies or request IDs, so the exact cause remains unknown.
+No retry, fallback or live contract test was performed in this investigation; the prompt
+change is not a demonstrated remedy for API failures.

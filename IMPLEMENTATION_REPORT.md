@@ -427,3 +427,44 @@ screenshots are retained under ignored `data/prompt-v4-verification/`; committed
 Production runs, request journal and budget rows have matching before/after logical hashes;
 the persistent counter remains 92. The private `.env` was not modified. Restart any
 existing server to load v4 before an explicitly authorized future paid run.
+
+### v4 diagnostic investigation and v5 general mechanics
+
+The saved six-request v4 first-action diagnostic was audited without inference. Jev's
+correct-action probabilities were 2% (tied rank 11) and 8% (tied rank 4); Clef's were
+4.92% (rank 6) and 5.10% (tied rank 9). Response confidence is distinct from correctness
+probability. Four valid but incorrect actions remain unchanged; Luna's two HTTP 502
+responses remain infrastructure errors with unknown billing and no action/probabilities.
+Existing logs/journal do not retain the raw error bodies/provider request IDs, so the
+exact upstream cause cannot be established. Official OpenRouter documentation classifies
+502 as model unavailability or an invalid upstream response, not proof of any one cause.
+
+v4 explains orientation/direction but omits explicit adjacent-strip transfers and their
+reversals. New `state-action-v5-permutations` appends only general sticker-permutation
+rules: two common face cycles, six CW strip cycles, and their prime/half-turn composition.
+The rules describe the environment for every possible state; they contain no current-state
+successor, reference solution, heuristic, move preference or recommendation. The live
+engine and every model-selected action are unchanged. All four models get equivalent
+rules; assigned IDs, 30-action allowance, history, retries and Claude low/1,024 stay fixed.
+
+v4 payloads remain available for offline baseline construction, with a frozen pre-change
+hash regression. Historical v4 reports and benchmark conditions remain separate and intact.
+The read-only preflight now expects v5; any existing server must restart to load it.
+The local o200k_base proxy adds **148 tokens**: empty-history Decisions 376 -> 524, Claude
+384 -> 532; six/seven-history comparisons have the same delta. Provider-specific overhead,
+v5 model accuracy and cost are unmeasured. This is not a claimed fix for Luna's 502.
+
+Verification: **360 Python tests passed**, Ruff and Node syntax/regression passed, the
+isolated five-puzzle/20-trial simulated suite passed, and browser checks passed with 128
+intercepted responses and no page/console errors. New tests reconstruct all 18 complete
+permutations from the declared cycles on unique sticker identities and cross-check
+scrambled transitions against PyCuber. One existing Starlette/AnyIO warning remains.
+The production runs/request/budget logical hash and original diagnostic report hash match
+their before snapshots; the persistent counter remains 98. No paid diagnostic, API retry,
+model substitution or LIVE benchmark was executed. No private `.env` change was made.
+
+Detailed [investigation and exact v5 addition](docs/V4_DIAGNOSTIC_AUDIT_AND_V5.md),
+[probability audit](docs/evidence/v4-diagnostic-audit.json),
+[token comparison](docs/evidence/prompt-v5-size-comparison.json) and
+[verification summary](docs/evidence/prompt-v5-verification.json) are retained.
+Raw local verification outputs/screenshots are in ignored `data/prompt-v5-verification/`.

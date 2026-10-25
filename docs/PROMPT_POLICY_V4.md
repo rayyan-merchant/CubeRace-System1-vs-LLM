@@ -1,5 +1,9 @@
 # CubeRace prompt policy v4
 
+Historical baseline: new requests now use [v5](V4_DIAGNOSTIC_AUDIT_AND_V5.md), which adds
+state-independent turn mechanics. The v4 specification and historical evidence below
+are retained unchanged; they do not describe the current live Router's default policy.
+
 `state-action-v4-facegrids` supersedes `state-action-v3-recent6` for new requests.
 This is an observation/prompt change, not a change to cube mechanics or action selection.
 Previous saved runs and billing remain intact. Aggregation already groups by policy
