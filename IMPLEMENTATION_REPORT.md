@@ -1,6 +1,6 @@
 # CubeRace: System-1 vs LLM — Implementation Report
 
-Initial implementation: 2026-10-22. Cost optimization review: 2026-10-24. Target: `rayyan-merchant/CubeRace-System1-vs-LLM`, branch `main`.
+Initial implementation: 2026-10-22. Cost optimization review: 2026-10-24. API compatibility/budget review: 2026-10-25. Target: `rayyan-merchant/CubeRace-System1-vs-LLM`, branch `main`.
 Verified source milestone: `c64dd2e` (engine, adapters, orchestration, UI, tests and setup).
 Implementation follows the supplied master brief and all four pages of `assignment-02.pdf`.
 The PDF's recording screenshots were also rendered and inspected; their pictured older
@@ -12,13 +12,13 @@ model names do not override the four assigned IDs in the PDF's requirements tabl
 |---|---|---|
 | Original complete local application | PASS | FastAPI API, vanilla frontend, cube engine, orchestration, analysis, persistence and exports |
 | Legal cube engine / exact primary reference | PASS | 18 legal moves, HTM, independent PyCuber comparisons, complete capped BFS tests through depth 5 |
-| Offline automated tests | PASS | 196 tests; actual output in `docs/evidence/pytest-output.txt` |
+| Offline automated tests | PASS | 255 tests; actual output in `docs/evidence/pytest-output.txt` |
 | Lint and JavaScript parsing | PASS | Ruff output retained; Node checked both JavaScript modules |
 | Full five-puzzle functional benchmark | PASS | 20 simulated trials, zero paid requests, raw JSON and three CSV exports retained |
 | Browser verification | PASS | Real headless Edge race/suite/replay/download/abort flows; no page or console errors |
 | Four assigned API interfaces | PASS with offline fixtures | Official contracts reviewed; exact routes and IDs, schema validation, retry/cap/failure tests |
-| Live routing/account acceptance | NOT RUN | No paid inference authorized in the cost optimization review |
-| Empirical four-model comparison | BLOCKED | No live trials, performance figures or model winners claimed |
+| Live routing/account acceptance | PARTIAL | One authorized Claude-only valid response at 1,024 tokens; other adapter changes verified offline |
+| Empirical four-model comparison | NOT RUN | No LIVE benchmark or model winner claimed; one adapter smoke is not solving evidence |
 | Student name and roll | PASS | Student-authorized Rayyan Merchant · 23K-0073 banner, all tabs and document fullscreen |
 | Required final screen recording | MANUAL / NOT CREATED | Recording checklist and results slide implemented |
 | Deployment | NOT PERFORMED | User did not authorize deployment |
@@ -57,18 +57,19 @@ are pinned in the requirements files. No user browser profile was used.
 
 ```text
 python run_verification.py
-196 passed, 1 warning
+255 passed, 1 warning
 All checks passed!
 PASS: five seeded puzzles, 20 simulated trials, zero paid requests; exports saved.
 
 python scripts/verify_browser.py
 Browser workflow and viewport evidence: docs/evidence/browser-verification.json
 
-python verify_live_api.py --confirm-paid
-BLOCKED: configure OPENROUTER_API_KEY, ALLOW_LIVE=true, OPENROUTER_MOCK_MODE=false
+python verify_live_api.py --models claude --confirm-paid
+One authorized Claude-only request with explicit runtime 1024 ceiling: VALID_RESPONSE, HTTP 200
 ```
 
-The last command verified the no-credentials gate; it made zero paid calls. The warning
+The initial no-credentials gate made zero paid calls. The 2026-10-25 Claude-only retest
+was separately authorized and billed $0.019908; private .env stayed unchanged. The warning
 is a dependency deprecation in Starlette's TestClient reference to AnyIO's BlockingPortal
 alias; tests pass. One Windows Proactor socket-reset callback was observed during an
 isolated browser run; it is separate from application-page/console errors.
@@ -112,14 +113,15 @@ Official OpenRouter documentation/model pages verified the Decisions payload/cho
 the assigned IDs/routes, chat-completions schema and Claude structured-output support.
 Sources and limits are recorded in [the contract review](docs/OPENROUTER_CONTRACT.md).
 Page visibility and offline fixtures do not establish account-specific availability.
-Unexpected effective model IDs fail closed; dated alias equivalence is not assumed.
+Unexpected effective model IDs fail closed; only the two user-reviewed dated aliases are explicitly allowed as of 2026-10-25.
 
 ## Remaining work requiring real external inputs
 
-1. Privately set the OpenRouter key, `ALLOW_LIVE=true`, `OPENROUTER_MOCK_MODE=false`,
-   real `STUDENT_NAME` and `STUDENT_ROLL`; restart the local server.
-2. Explicitly authorize the four-call smoke command. Inspect retained response IDs,
-   effective IDs and errors in `data/live-smoke.json` before allocating a full suite.
+1. Manually change only `CLAUDE_MAX_TOKENS=1024` in the existing private `.env` and restart;
+   keep `CLAUDE_REASONING_EFFORT=low`, `API_RETRIES=0` and existing private credentials.
+2. Retain prior `data/live-smoke.json` and new timestamped reports. Claude's selective retest
+   below is complete; do not repeat it unnecessarily. Only run Jev/Luna-selective verification
+   if explicitly authorized. Lower the existing key's total no-reset cap to $0.95 manually.
 3. Set a sufficient cumulative budget after accounting for smoke/warm-up calls. With the
    new zero-retry default, five primary puzzles have a maximum of 600 requests (604 including smoke). The UI requires explicit
    confirmation and a per-run cap. Token cost is not determined by request count alone.
@@ -223,3 +225,66 @@ empirical model performance. The final video remains a manual student deliverabl
 | Offline live-mode failures | [Screenshot](docs/evidence/offline-live-errors-presentation-1366x768.png) | [Screenshot](docs/evidence/offline-live-errors-presentation-1920x1080.png) |
 
 Machine-readable browser checks: [browser-verification.json](docs/evidence/browser-verification.json).
+
+
+## Final OpenRouter compatibility and sub-$1 workflow — 2026-10-25
+
+Changes are limited to adapter validation/context, configuration defaults, billing normalization,
+the smoke CLI, tests and documentation. Recording UI, identity, cube engine, reference BFS,
+seeds, 30-action allowance, suite execution and metric calculations are unchanged. SQLite
+schema and historical data are not migrated or overwritten. Only run policy metadata is extended.
+
+- Exact effective-ID sets allow the assigned Jev ID and `typesafe/jev-1.13-20260917`, the
+  assigned Luna ID and `openai/gpt-6-luna-decisions-20261006`, and only the original Clef/
+  Claude IDs. Requests retain the four assigned IDs; unrelated/future/prefix matches fail.
+  Both requested and effective IDs are retained. Valid moves without effective IDs fail closed.
+- Defaults: low Claude effort, 1,024 combined completion/reasoning tokens, zero retries.
+  Strict one-move schema and mandatory reasoning remain; output-limit failures never trigger
+  parsing of reasoning, automatic retries or automatic increases. The 1,024 setting remains
+  experimental. Private `.env` was left unchanged (its ceiling is still 512).
+- All four models receive the same last-six executed-move policy, current/goal facelets,
+  legal action definitions, HTM and remaining allowance based on the full internal history.
+  Full move/step histories remain saved and exported. `state-action-v3-recent6` and request/run
+  metadata prevent mixing new results with full-history or different-setting experiments.
+  Action descriptions were retained for fair interpretation; no word-level optimization
+  was traded for loss of decision information.
+- Selective `--models claude` and `--models jev,luna` cap calls at one and two; no selection
+  preserves four. CLI/function consent, zero retries and the persistent ledger apply.
+  Timestamp + unique-suffix reports use exclusive creation, preserving prior smoke evidence.
+  Console/report telemetry includes HTTP, effective ID, outcome, finish reason, usage and cost.
+- Decisions input/output and chat prompt/completion usage normalize correctly. Missing totals
+  derive only from two known components, labelled `derived` versus `provider`. Missing cost/
+  tokens remain unknown; provider costs/raw usage and historical ledger entries are preserved.
+
+Verification: **255 tests passed**, one existing Starlette/AnyIO deprecation warning; Ruff,
+Node syntax and a five-puzzle / 20-trial simulated suite passed. Expanded browser verification
+passed at both desktop sizes and mobile with zero page/console errors. Its eight inference-path
+requests were intercepted offline. The Abort test now waits for terminal status instead of
+asserting an intermediate asynchronous state; no recording UI change was made.
+
+### Exactly one authorized paid smoke
+
+After offline checks, one Claude-only request used a fixed runtime 1,024-token override,
+low effort and zero retries. It returned **HTTP 200 / VALID_RESPONSE / finish_reason=stop**,
+move **F**, requested and effective ID `anthropic/claude-opus-5.5`. Provider-reported usage:
+**882 input, 819 completion, 809 reasoning, 1,701 total tokens**, **$0.019908** cost.
+No second inference, Jev/Luna retest, paid practice race or LIVE benchmark was run.
+
+Private timestamped report:
+`data/live-smoke-20261025T074836541858Z-e67f43de.json`.
+Public sanitized [smoke evidence](docs/evidence/claude-selective-smoke-2026-10-25.json)
+contains no key. Historical smoke reports and private `.env` were preserved.
+
+A free key-metadata check after the call reported $0.033779438 cumulative spend,
+$0.966220562 remaining, $1 lifetime limit with no reset. This inference key cannot update
+its own limit; lower the existing total lifetime limit to **$0.95** in OpenRouter settings.
+That cap includes past spend; it is not an extra allowance. Leave a margin for concurrent
+requests/settlement. No management credentials were requested or persisted.
+
+At the one observed cost, 150 additional Claude decisions alone extrapolate to $2.9862;
+882 input and a full 1,024 output tokens at published $4/M and $20/M rates would instead
+be $0.024008 per decision. Neither is a performance or future-cost guarantee. A sub-$1
+five-puzzle benchmark requires favorable solving/termination behavior and may remain
+incomplete when the provider cap is reached. Do not lower one model's 30-action allowance,
+substitute results, reset budgets or hide failures. Review before explicitly starting the
+single required five-puzzle Primary benchmark, then use free replay for recording.

@@ -88,17 +88,30 @@ OPENROUTER_MOCK_MODE=false
 API_CALL_BUDGET=1200
 API_RETRIES=0
 CLAUDE_REASONING_EFFORT=low
-CLAUDE_MAX_TOKENS=512
+CLAUDE_MAX_TOKENS=1024
 ```
 
-Restart the server. The key stays on the server and is never sent to the browser. Confirm the
-one-call-per-model smoke test before a full evaluation:
+Restart the server. The key stays on the server and is never sent to the browser. For a first
+routing check only, the default smoke command tests all four models:
 
 ```powershell
 .venv\Scripts\python.exe verify_live_api.py --confirm-paid
 ```
 
-This command has no retries, at most four charged requests, and writes `data/live-smoke.json`.
+This command has no retries, at most four charged requests, and writes a new timestamped
+`data/live-smoke-<UTC timestamp>-<unique suffix>.json`. Existing reports, including the old
+`data/live-smoke.json`, are preserved. To avoid repeating already-checked models, select only
+those needing verification:
+
+```powershell
+.venv\Scripts\python.exe verify_live_api.py --models claude --confirm-paid
+.venv\Scripts\python.exe verify_live_api.py --models jev,luna --confirm-paid
+```
+
+These send at most one and two requests respectively. Short names are `jev,luna,clef,claude`;
+assigned full IDs also work. Unknown, empty or duplicate selections fail before inference.
+Output reports requested/effective IDs, status, HTTP status, finish reason, usage and cost.
+`OUTPUT_LIMIT` remains a failure; reasoning text is never mined for a move.
 It tests routing/schema, not solving. On Unix use `.venv/bin/python`. The main UI live start
 requires checking an explicit paid-call authorization and a positive per-run cap.
 
@@ -114,13 +127,14 @@ the cumulative ceiling. Preserve the database between live sessions.
 
 1. Rehearse with simulated fixtures for free. Check the identity banner and recording layout first.
 2. Privately enable live access only when ready. Set `API_RETRIES=0`,
-   `CLAUDE_REASONING_EFFORT=low`, `CLAUDE_MAX_TOKENS=512` and restart. Never disable
+   `CLAUDE_REASONING_EFFORT=low`, `CLAUDE_MAX_TOKENS=1024` and restart. Never disable
    Claude's mandatory reasoning. Supported efforts are `low`, `medium`, `high`, `xhigh`, `max`;
    invalid efforts fail at startup. Settings are fixed across the entire run, never adapted
    to a model's successes/failures. A changed setting is a new experimental condition.
-3. Explicitly authorize **one** `verify_live_api.py --confirm-paid` execution: at most four
-   requests, one per assigned model. Inspect the saved smoke report. Repeating this command
-   is another paid test; replaying a completed run is free.
+3. After a previous four-model smoke, verify only models that need retesting. Start with
+   **one Claude-only request** at 1,024 tokens; review its actual cost and whether it returns
+   valid final JSON before considering a benchmark. Jev/Luna-only verification is optional
+   and separately paid. No selection means all four; do not repeat it unnecessarily.
 4. For five primary puzzles, explicitly set the UI per-run cap to **600** and check paid-call
    consent immediately before starting the suite. The UI displays recommendations; it never
    increases your chosen cap or persistent budget. Consent clears after each start and on
@@ -132,21 +146,38 @@ the cumulative ceiling. Preserve the database between live sessions.
    demonstrations. Refresh, statistics, exports, page loads and replay never call inference.
    No benchmark or failed trial restarts automatically. A new Start is a new paid execution.
 
-Claude sends `reasoning: {"effort":"low"}` and `max_tokens:512` by default, plus the same
+Claude sends `reasoning: {"effort":"low"}` and `max_tokens:1024` by default, plus the same
 strict 18-move JSON schema. OpenRouter's public model metadata confirms mandatory reasoning,
 these efforts, `max_tokens`, and structured outputs. The ceiling covers reasoning plus
 visible output on most providers: an empty/truncated response can still be billed. A
 `finish_reason: length` is retained as an output-limit failure without automatically retrying
 or raising the ceiling. Changing ceilings requires a deliberate new experimental condition.
-Paid account/provider compatibility and actual token savings remain **unverified**.
+The user reported that 512 tokens were exhausted entirely by mandatory reasoning, with
+no final JSON. The 1,024 ceiling is an experimental change, not a guaranteed fix or saving.
+Update `CLAUDE_MAX_TOKENS=1024` in your existing private `.env` manually, then restart the
+server. Defaults and `.env.example` do not override an explicit older `.env` setting.
 
-Payloads keep the complete agent history, state, goal, remaining moves and all 18 action
-meanings for every model. Compact Claude JSON, one copy of the common instructions and
-shorter shared action descriptions remove redundancy; no solver hints or history pruning
-were introduced. New compact-policy suites are not pooled with the old policy or different
-fixed settings. Analysis selects the newest saved suite's condition and shows exclusions.
+Payloads keep current state, solved goal, remaining allowance, HTM and all 18 action
+meanings. Every model sees only its **last six executed moves**, initially empty. The full
+history still determines `moves_remaining` and is preserved internally for metrics, replay
+and exports. No conversational transcript, reasoning request or solution hint is sent.
+The three Decisions payloads have identical wording and criteria; Claude gets equivalent
+information through compact JSON. The explicit action definitions were retained for clarity,
+not shortened at the expense of fairness.
+
+The fixed policy is `state-action-v3-recent6`. Saved runs record the history window, Claude
+settings and identity-allowlist version; request records include their visible move history,
+window, remaining allowance and policy version. Old/full-history or different-setting suites
+are not pooled with the new condition. Analysis selects the newest saved suite's condition
+and shows exclusions.
 
 ### Reported billing, not estimated spending
+
+Decisions usage `input_tokens` / `output_tokens` normalizes to prompt/completion counts;
+chat usage `prompt_tokens` / `completion_tokens` uses the same normalized fields. A missing
+total is derived only when both components are known. `total_tokens_source` distinguishes
+`provider` from `derived`; summaries count these sources. Provider costs are retained as
+reported; historical raw usage is interpreted read-only, never rewritten.
 
 The server stores raw response `usage`, native prompt/completion/total tokens, reasoning
 tokens, and `usage.cost` per request, including charged errors/malformed/limited outputs.
@@ -170,12 +201,37 @@ illegal moves, malformed action JSON, output truncation and move limits never qu
 an agent on an assumption about future solving quality. A new explicitly approved run
 may retry after you fix compatibility; no result is substituted or fabricated.
 
+## A total API budget below $1
+
+A request-count cap is not a dollar cap. In [OpenRouter key settings](https://openrouter.ai/settings/keys),
+set the existing key's **total lifetime limit to $0.95** (or $0.90 for a larger margin),
+with no reset. This is a cumulative limit including money already spent, not an additional
+$0.95 allowance. Do not create another key or reset the request ledger to bypass spending.
+The [key limits endpoint](https://openrouter.ai/docs/api/reference/limits) reports spending;
+changing a limit via API requires a management key. Regular inference keys cannot update it.
+Leave margin for concurrent requests and billing settlement; do not promise a strict final
+settled total solely from an estimate.
+
+At $4/M input and $20/M output, 882 input plus the full 1,024 completion tokens costs
+**$0.024008 per Claude decision**, excluding other fees. This is an estimate using the
+user's earlier input size and [published pricing](https://openrouter.ai/anthropic/claude-opus-5.5/),
+not a measured future request. 150 such Claude decisions alone would be $3.6012. A five-puzzle
+suite can therefore exceed $1 even with zero retries and concise prompts. One valid smoke
+move does not establish solve rate, typical token use, or successful completion under $1.
+
+Review the selective Claude smoke's actual billed cost before starting **one five-puzzle
+Primary suite**. Skip paid practice races and unnecessary smoke repeats. Keep all models'
+30-action allowance and the same context policy. If the provider cap is reached, retain
+actual failure and NOT_RUN counts; the evidence is incomplete. Never substitute simulations
+or alter one model's allowance. Use saved replay for recording. No benchmark is started by
+this workflow automatically.
+
 ## Metrics and fairness
 
 - **State/actions:** 54 facelets, row-major URFDLB, fixed color centers; exactly 18 legal
   Singmaster actions. Half-turn metric (HTM): `R2` is one action. Every trial has exactly
   the same 30-action ceiling; early solves finish immediately.
-- **Inputs:** identical initial states, current facelets, full agent-only history, goal,
+- **Inputs:** identical initial states, current facelets, last six agent-only executed moves, goal,
   remaining moves and 18 action descriptions. Initial history is empty. No scramble,
   reference solution, search, heuristic or inverse-scramble hint enters a live request.
 - **Optimum:** capped complete bidirectional BFS (depth 5, 150,000 states), isolated in
@@ -263,7 +319,7 @@ profiles and logged-in accounts are not used.
 ## Recording and submission checklist
 
 - Verify **Rayyan Merchant · 23K-0073** remains visible on every tab and in full screen.
-- Run and retain the four-call live smoke log, then five or more primary puzzles × four models.
+- Retain the existing smoke logs and only necessary selective retests; then run the required primary suite within the provider spend cap.
 - Inspect errors and gaps; export raw JSON/CSVs. Record unavailable routes as incomplete.
 - Record an in-progress race with all four cards, moves and timers visible.
 - Record completed attempts, including honest move-limit or error outcomes.
@@ -294,7 +350,7 @@ NOT_RUN counts remain visible in the comparison tables.
 
 Detailed methodology lives here rather than above the demo controls: each suite uses the
 arena source, difficulty and starting seed; subsequent seeds advance deterministically.
-Live agents receive URFDLB row-major facelets, fixed centers, their complete move history
+Live agents receive URFDLB row-major facelets, fixed centers, their last six executed moves
 and the same legal actions, never the scramble or reference solution. Cube nets use U white,
 R red, F green, D yellow, L orange, B blue. Rankings use measured completion time; playback
 speed affects only rendering. All terminal started trials, including infrastructure failures,
@@ -307,3 +363,22 @@ The live request plan retains explicit per-run consent, a user-entered cap, reco
 race/suite caps, retry count, persistent request usage and known/unknown billing. It is hidden
 on Results Slide; opening that slide, replaying, exporting or refreshing starts no inference.
 API schema documentation remains available at `/openapi.json`.
+
+
+### Authorized Claude-only result — 2026-10-25
+
+One paid request at low effort / 1,024 tokens returned HTTP 200, `VALID_RESPONSE`, move `F`,
+`finish_reason=stop`, requested/effective `anthropic/claude-opus-5.5`. Usage: **882 input,
+819 completion, 809 reasoning, 1,701 total tokens**, reported cost **$0.019908**. The smoke
+used an explicit runtime setting; the private `.env` was not edited. Retained sanitized
+[evidence](docs/evidence/claude-selective-smoke-2026-10-25.json) is adapter smoke evidence,
+not a solve-rate benchmark. Jev/Luna fixes were verified with offline fixtures only.
+No further paid inference or live benchmark was executed by this patch.
+
+The key reported **$0.033779438 cumulative spend**, **$0.966220562 remaining**, with a
+**$1 no-reset lifetime limit** after that call. The normal inference key cannot lower its
+own limit; the user must change it to $0.95 in OpenRouter settings before the benchmark.
+At this single observed request cost, 35 additional Claude decisions would cost $0.69678,
+40 would cost $0.79632, and 150 would cost $2.9862, **excluding** prior spending and the
+other models. These are extrapolations, not measured benchmark costs or guarantees. Solve
+behavior and token use may vary. The full 30-action allowance remains in force for everyone.

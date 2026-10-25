@@ -27,7 +27,7 @@
         "solve_rate": 100.0,
         "avg_api_latency_ms": null,
         "request_count": 0,
-        "avg_attempt_ms": 263.99404001422226,
+        "avg_attempt_ms": 417.42406003177166,
         "mean_moves_all": 4.4,
         "mean_moves_solved": 4.4,
         "mean_optimality_gap": 0.2,
@@ -38,6 +38,10 @@
         "billing": {
           "request_count": 0,
           "known_cost_usd": null,
+          "total_token_sources": {
+            "provider": 0,
+            "derived": 0
+          },
           "unknown_cost_requests": 0,
           "cost_complete": true,
           "total_cost_usd": 0,
@@ -74,7 +78,7 @@
         "solve_rate": 100.0,
         "avg_api_latency_ms": null,
         "request_count": 0,
-        "avg_attempt_ms": 400.8970799855888,
+        "avg_attempt_ms": 688.6251999996603,
         "mean_moves_all": 6.4,
         "mean_moves_solved": 6.4,
         "mean_optimality_gap": 2.2,
@@ -85,6 +89,10 @@
         "billing": {
           "request_count": 0,
           "known_cost_usd": null,
+          "total_token_sources": {
+            "provider": 0,
+            "derived": 0
+          },
           "unknown_cost_requests": 0,
           "cost_complete": true,
           "total_cost_usd": 0,
@@ -121,7 +129,7 @@
         "solve_rate": 0.0,
         "avg_api_latency_ms": null,
         "request_count": 0,
-        "avg_attempt_ms": 1144.2986600100994,
+        "avg_attempt_ms": 1968.353380030021,
         "mean_moves_all": 30,
         "mean_moves_solved": null,
         "mean_optimality_gap": null,
@@ -132,6 +140,10 @@
         "billing": {
           "request_count": 0,
           "known_cost_usd": null,
+          "total_token_sources": {
+            "provider": 0,
+            "derived": 0
+          },
           "unknown_cost_requests": 0,
           "cost_complete": true,
           "total_cost_usd": 0,
@@ -168,7 +180,7 @@
         "solve_rate": 100.0,
         "avg_api_latency_ms": null,
         "request_count": 0,
-        "avg_attempt_ms": 422.968120011501,
+        "avg_attempt_ms": 725.4542800365016,
         "mean_moves_all": 6.4,
         "mean_moves_solved": 6.4,
         "mean_optimality_gap": 2.2,
@@ -179,6 +191,10 @@
         "billing": {
           "request_count": 0,
           "known_cost_usd": null,
+          "total_token_sources": {
+            "provider": 0,
+            "derived": 0
+          },
           "unknown_cost_requests": 0,
           "cost_complete": true,
           "total_cost_usd": 0,
@@ -212,12 +228,19 @@
       "timeout_seconds": 30,
       "retries": 0,
       "claude_reasoning_effort": "low",
-      "chat_max_tokens": 512,
-      "concurrency": 4
+      "chat_max_tokens": 1024,
+      "concurrency": 4,
+      "history_window": 6,
+      "history_policy": "last-six-executed-agent-moves",
+      "effective_id_policy": "explicit-allowlist-2026-10-25"
     },
     "billing": {
       "request_count": 0,
       "known_cost_usd": null,
+      "total_token_sources": {
+        "provider": 0,
+        "derived": 0
+      },
       "unknown_cost_requests": 0,
       "cost_complete": true,
       "total_cost_usd": 0,

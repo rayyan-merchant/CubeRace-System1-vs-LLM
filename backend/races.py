@@ -3,7 +3,7 @@ import time
 import uuid
 from datetime import datetime, timezone
 from .cube import SOLVED, MOVES, apply, sequence, scramble, shortest_path, inverse
-from .models import MODELS, ModelFailure, Router
+from .models import MODELS, ModelFailure, Router, POLICY_VERSION, request_policy
 from .billing import run_billing, summarize
 
 
@@ -32,13 +32,9 @@ class Manager:
                "timestamp": datetime.now(timezone.utc).isoformat(), "source": "CubeRace: System-1 vs LLM",
                "mode": config.mode, "kind": config.kind, "tier": config.tier,
                "seed": config.seed, "puzzle_count": config.puzzles,
-               "metric": "HTM", "move_limit": 30, "policy_version": "state-action-v2-compact",
+               "metric": "HTM", "move_limit": 30, "policy_version": POLICY_VERSION,
                "condition": "no-scramble-agent-history-only", "status": "RUNNING",
-               "request_policy": {"timeout_seconds": self.settings.timeout,
-                                  "retries": self.settings.retries,
-                                  "claude_reasoning_effort": self.settings.claude_reasoning_effort,
-                                  "chat_max_tokens": self.settings.claude_max_tokens,
-                                  "concurrency": self.settings.concurrency},
+               "request_policy": request_policy(self.settings),
                "budget": {"used": 0, "cap": config.call_cap}, "races": [], "events": []}
         run["budget"]["run_id"] = run["id"]
         # Reserve admission before yielding to the proof worker.

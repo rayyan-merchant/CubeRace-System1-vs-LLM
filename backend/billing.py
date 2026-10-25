@@ -12,9 +12,18 @@ def reported(usage):
     usage = usage if isinstance(usage, dict) else {}
     details = usage.get("completion_tokens_details")
     details = details if isinstance(details, dict) else {}
-    return {"prompt_tokens": number(usage.get("prompt_tokens")),
-            "completion_tokens": number(usage.get("completion_tokens")),
-            "total_tokens": number(usage.get("total_tokens")),
+    prompt = number(usage.get("prompt_tokens"))
+    completion = number(usage.get("completion_tokens"))
+    if prompt is None:
+        prompt = number(usage.get("input_tokens"))
+    if completion is None:
+        completion = number(usage.get("output_tokens"))
+    total = number(usage.get("total_tokens"))
+    source = "provider" if total is not None else None
+    if total is None and prompt is not None and completion is not None:
+        total, source = prompt + completion, "derived"
+    return {"prompt_tokens": prompt, "completion_tokens": completion,
+            "total_tokens": total, "total_tokens_source": source,
             "reasoning_tokens": number(details.get("reasoning_tokens")),
             "cost_usd": number(usage.get("cost"))}
 
@@ -32,6 +41,8 @@ def summarize(requests, unrecorded=0):
         totals[key] = {"known_total": sum(observed) if observed else None,
                        "unknown_requests": count - len(observed)}
     return {"request_count": count, "known_cost_usd": known,
+            "total_token_sources": {source: sum(v["total_tokens_source"] == source for v in values)
+                                    for source in ("provider", "derived")},
             "unknown_cost_requests": unknown, "cost_complete": unknown == 0,
             "total_cost_usd": (known if count else 0) if unknown == 0 else None,
             "tokens": totals}

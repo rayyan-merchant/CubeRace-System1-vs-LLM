@@ -1,6 +1,7 @@
 """Drive only an isolated, credential-free localhost app; retain real screenshots."""
 import json
 import os
+import re
 from pathlib import Path
 import socket
 import sys
@@ -191,7 +192,7 @@ def main():
                     page.locator("#start").click()
                     page.locator("#abort").click()
                     expect(page.locator("#start")).to_be_enabled(timeout=10000)
-                    assert any(s in page.locator("#progress").inner_text() for s in ("ABORTED", "COMPLETED"))
+                    expect(page.locator("#progress")).to_have_text(re.compile("ABORTED|COMPLETED"))
                     page.set_viewport_size({"width": 390, "height": 844})
                     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
                     page.screenshot(path=str(evidence / "arena-mobile.png"), full_page=True)

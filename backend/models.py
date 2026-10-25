@@ -22,6 +22,25 @@ MODELS = (
     Model("cloudflare/clef", "Cloudflare Clef", "decisions"),
     Model("anthropic/claude-opus-5.5", "Claude Opus 5.5", "chat"),
 )
+ALLOWED_EFFECTIVE_IDS = {
+    "typesafe/jev-1.13": {"typesafe/jev-1.13", "typesafe/jev-1.13-20260917"},
+    "openai/gpt-6-luna-decisions": {
+        "openai/gpt-6-luna-decisions", "openai/gpt-6-luna-decisions-20261006"},
+    "cloudflare/clef": {"cloudflare/clef"},
+    "anthropic/claude-opus-5.5": {"anthropic/claude-opus-5.5"},
+}
+HISTORY_WINDOW = 6
+POLICY_VERSION = "state-action-v3-recent6"
+
+
+def request_policy(settings):
+    return {"timeout_seconds": settings.timeout, "retries": settings.retries,
+            "claude_reasoning_effort": settings.claude_reasoning_effort,
+            "chat_max_tokens": settings.claude_max_tokens, "concurrency": settings.concurrency,
+            "history_window": HISTORY_WINDOW, "history_policy": "last-six-executed-agent-moves",
+            "effective_id_policy": "explicit-allowlist-2026-10-25"}
+
+
 ENDPOINTS = {"decisions": "https://openrouter.ai/api/alpha/decisions",
              "chat": "https://openrouter.ai/api/v1/chat/completions"}
 INSTRUCTIONS = (
@@ -51,7 +70,7 @@ def strict_json(text):
 
 def payload(model, state, history, settings=None):
     settings = settings or Settings()
-    context = {"cube_facelets": state, "recent_moves": list(history),
+    context = {"cube_facelets": state, "recent_moves": list(history[-HISTORY_WINDOW:]),
                "goal_facelets": SOLVED, "moves_remaining": 30 - len(history),
                "metric": "HTM"}
     question = {"type": "choice", "instructions": INSTRUCTIONS, "criteria": CRITERIA}
@@ -132,6 +151,9 @@ class Router:
                           "latency_ms": None, "outcome": "PENDING", "usage": None,
                           "provider": None, "response_id": None, "finish_reason": None,
                           "billing": reported(None)}
+                record.update(policy_version=POLICY_VERSION, history_window=HISTORY_WINDOW,
+                              model_visible_history=list(history[-HISTORY_WINDOW:]),
+                              moves_remaining=30 - len(history))
                 records.append(record)
                 start = time.perf_counter()
                 try:
@@ -169,9 +191,11 @@ class Router:
                             if isinstance(error, dict) and error.get("code") in (400, 401, 402, 403, 404, 422):
                                 record["outcome"] = "PROVIDER_ERROR"
                                 raise ModelFailure("UNAVAILABLE", "Provider reports permanent incompatibility", permanent=True)
-                            if body.get("model") and body["model"] != model.id:
+                            effective_id = body.get("model")
+                            if effective_id is not None and (not isinstance(effective_id, str)
+                                    or effective_id not in ALLOWED_EFFECTIVE_IDS[model.id]):
                                 record["outcome"] = "MODEL_ID_MISMATCH"
-                                raise ModelFailure("UNAVAILABLE", "Effective model ID differs; review routing", permanent=True)
+                                raise ModelFailure("UNAVAILABLE", "Effective model ID not in explicit allowlist", permanent=True)
                             choices = body.get("choices")
                             if isinstance(choices, list) and choices and isinstance(choices[0], dict):
                                 record["finish_reason"] = choices[0].get("finish_reason")
@@ -180,6 +204,9 @@ class Router:
                                 record["outcome"] = "OUTPUT_LIMIT"
                                 raise ModelFailure("API_ERROR", "Output ceiling reached; no automatic retry or setting increase")
                             move, meta = parse(model, body)
+                            if effective_id is None:
+                                record["outcome"] = "MODEL_ID_MISSING"
+                                raise ModelFailure("UNAVAILABLE", "Missing effective model ID; review routing", permanent=True)
                             schema_failures[model.id] = 0
                             record.update(meta)
                             record["outcome"] = "VALID"

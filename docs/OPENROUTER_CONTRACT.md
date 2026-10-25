@@ -32,14 +32,17 @@ JSON object with one `move` key is accepted. No markdown/code-fence/free-text re
 The adapter requests strict JSON-schema structured output with an 18-move enum and
 `require_parameters: true`. Official support was verified in the model FAQ; account-specific
 route acceptance remains untested. It fails visibly if the requested constraint cannot be
-served, without retrying with weaker output or another model. Claude now defaults to `CLAUDE_REASONING_EFFORT=low` and `CLAUDE_MAX_TOKENS=512`,
+served, without retrying with weaker output or another model. Claude now defaults to `CLAUDE_REASONING_EFFORT=low` and `CLAUDE_MAX_TOKENS=1024`,
 recorded in fixed request policy; this is not a promise about actual cost or quality.
 
 Retries: at most configured retries (0–3), only transport failures, malformed responses,
 429, 500, 502, 503, 504. Same ID every time. Missing optional confidence/usage stays null.
-Effective model ID is retained when returned; an unexpected ID fails closed. Dated alias
-canonicalization, if encountered live, requires explicit documented review, never silent
-equivalence. HTTP response bodies are not written to logs, avoiding secret reflection.
+Effective model ID is retained. The explicit user-reviewed allowlist now accepts
+`typesafe/jev-1.13-20260917` only for `typesafe/jev-1.13`, and
+`openai/gpt-6-luna-decisions-20261006` only for `openai/gpt-6-luna-decisions`, plus each
+assigned ID itself. Clef and Claude permit only their assigned IDs. No prefix matching,
+future-date inference or fallback occurs. A valid action without an effective ID fails
+closed; a malformed envelope follows existing schema-failure handling. HTTP response bodies are not written to logs, avoiding secret reflection.
 
 Smoke gate: `python verify_live_api.py --confirm-paid` authorizes at most one request per
 model (four total), with no retries, while consuming the same persistent application budget.
@@ -53,7 +56,7 @@ Valid schema and route access still do not demonstrate cube-solving quality.
   response_format and structured_outputs. Retained subset: `docs/evidence/openrouter-claude-metadata.json`.
 - https://openrouter.ai/docs/guides/best-practices/reasoning-tokens documents effort and
   combined completion/reasoning limits. No `enabled:false`, `effort:none` or guessed
-  explicit reasoning budget is sent. `512` is a ceiling, not a guaranteed valid answer.
+  explicit reasoning budget is sent. `1024` is a ceiling, not a guaranteed valid answer.
 - https://openrouter.ai/docs/cookbook/administration/usage-accounting documents automatic
   response usage, native token counts, reasoning tokens and cost; `usage.include` is now
   deprecated and has no effect. The compatible chat opt-in remains; Decisions uses only
@@ -63,3 +66,28 @@ Valid schema and route access still do not demonstrate cube-solving quality.
 - Default retries are zero. HTTP/configuration incompatibility stops later model-puzzle
   requests within the same run; two consecutive unsupported envelopes do the same. Valid
   envelope / bad action quality and token-limit outcomes do not quarantine later puzzles.
+
+
+## User-observed compatibility corrections (2026-10-25)
+
+The user supplied paid smoke outcomes: Jev and Luna returned HTTP 200 with the two dated
+IDs above; Clef returned its assigned ID; Claude returned HTTP 200 / finish_reason=length,
+512 completion/reasoning tokens, no final JSON and $0.013768 reported cost. These are
+user-reported observations, not an independently rerun four-model test by this patch.
+
+Claude defaults to low effort / 1,024 combined completion tokens / zero retries. The ceiling
+is fixed for a run and remains experimental. Last-six executed agent moves is the same
+fixed context policy across all four models. Complete gameplay histories remain internal.
+No chain-of-thought extraction or prompt leakage was introduced.
+
+Both native Decisions input/output token counts and chat prompt/completion counts normalize
+to the same accounting fields. Totals are marked provider-reported or derived; absent values
+stay unknown. All billing comes from the original responses; no paid retrieval calls.
+Selective smoke tests preserve timestamped reports and consume at most one request per
+selected assigned model. No selection retains the four-call maximum. Consent is required
+both at the CLI and the smoke function boundary.
+
+A $0.90–$0.95 cumulative no-reset key limit is recommended before a budget-limited benchmark.
+See [limits](https://openrouter.ai/docs/api/reference/limits) and
+[management-only key updates](https://openrouter.ai/docs/api/api-reference/api-keys/update-keys).
+No request-count ceiling guarantees a dollar total or complete five-puzzle evidence.

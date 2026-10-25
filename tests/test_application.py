@@ -123,8 +123,15 @@ async def test_real_adapter_orchestration_move_cap_and_empty_initial_history(tmp
     for model in MODELS:
         contexts = [c for m, c in seen if m == model.id]
         assert contexts[0]["recent_moves"] == []
-        assert contexts[-1]["recent_moves"] == ["R"] * 29
+        assert contexts[-1]["recent_moves"] == ["R"] * 6
         assert all("scramble" not in c for c in contexts)
+        assert [c["moves_remaining"] for c in contexts] == list(range(30, 0, -1))
+    assert run["request_policy"]["history_window"] == 6
+    for trial in store.get(run["id"])["races"][0]["trials"]:
+        assert trial["moves"] == ["R"] * 30
+        assert len(trial["steps"]) == 30
+        assert trial["requests"][-1]["model_visible_history"] == ["R"] * 6
+        assert trial["requests"][-1]["moves_remaining"] == 1
     assert store.used() == 120
     store.close()
 
