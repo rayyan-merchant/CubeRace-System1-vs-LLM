@@ -49,7 +49,7 @@ def check(base_url="http://127.0.0.1:8000", *, client=None, settings=None):
     checks, warnings = {}, []
     checks["local_project_directory"] = Path.cwd().resolve() == ROOT
     checks["local_model_module"] = Path(local["models_module"]).resolve() == ROOT / "backend/models.py"
-    checks["local_policy"] = local["policy_version"] == "state-action-v3-recent6" and local["history_window"] == 6
+    checks["local_policy"] = local["policy_version"] == "state-action-v4-facegrids" and local["history_window"] == 6
     checks["local_allowlist"] = local["allowed_effective_ids"] == EXPECTED_IDS
     checks["local_claude"] = settings.claude_reasoning_effort == "low" and settings.claude_max_tokens == 1024
     checks["local_zero_retries"] = settings.retries == 0

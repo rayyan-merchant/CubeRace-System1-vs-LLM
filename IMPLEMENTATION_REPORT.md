@@ -387,3 +387,43 @@ regression and JavaScript syntax checks passed, Ruff passed, and isolated browse
 passed with 128 intercepted requests and no console errors. Production database logical
 hashes matched before and after export/replay. No paid requests were made. Local runtime
 readiness does not guarantee provider availability, solving performance or a sub-$1 suite.
+
+### Observation policy v4 and first-action diagnostics
+
+New policy `state-action-v4-facegrids` retains the authoritative facelet string and adds
+lossless labeled 3x3 slash-row grids. Shared instructions define fixed-center color labels,
+the exact engine-consistent outside-view top/right neighbors, the whole-cube goal, turn
+directions and HTM. Redundant solved-state/metric input fields and repeated action wording
+were removed. All 18 actions, last-six history, full internal histories, 30-move allowance,
+assigned identities, Claude low/1,024, configured retries and strict parsing are preserved.
+No solver hint, heuristic, successor preview, forced loop avoidance or move replacement
+was introduced. The existing aggregation condition isolates v4 from historical policies;
+the read-only preflight now expects v4 and detects a server still running old source.
+
+`verify_cube_diagnostics.py` previews for free, and requires `--confirm-paid` for at most
+six requests: two one-move states for each of Jev, Luna and Clef. Optional depth 2 is a
+separate six-request first-action diagnostic. The observer scores only after a response;
+neither the generating sequence nor correct actions/scoring data enter model context.
+Diagnostics use the persistent request journal/budget, require zero retries, refuse an
+active run or insufficient six-request capacity, skip permanent incompatibilities, retain
+unknown billing, and save timestamped reports outside benchmark datasets. Claude remains
+in the final assignment benchmark. No paid diagnostic or benchmark was executed.
+
+Size measurement is a local **o200k_base proxy**, not provider-billed usage: empty-history
+Decisions content is 321 -> 376 tokens; Claude including system text is 329 -> 384.
+Six/seven-move histories are 336 -> 391 and 344 -> 399 respectively. Every case increases
+55 proxy tokens despite 118 fewer characters. Provider-specific token/cost changes and
+model-comprehension gains remain unmeasured. Exact policy, orientation table, commands,
+scoring boundaries and size methodology: [PROMPT_POLICY_V4.md](docs/PROMPT_POLICY_V4.md).
+
+Final offline verification: **322 Python tests passed**, Ruff and Node syntax/regression
+checks passed, and the isolated five-puzzle/20-trial simulated verification passed. Browser
+checks passed for Arena, Analysis, Slide, identity/fullscreen, replay, abort and responsive
+views, with 128 intercepted calls, grid reconstruction assertions and no page/console
+errors. One existing Starlette/AnyIO deprecation warning remains. Raw local outputs and
+screenshots are retained under ignored `data/prompt-v4-verification/`; committed
+[verification summary](docs/evidence/prompt-v4-verification.json) and
+[size comparison](docs/evidence/prompt-v4-size-comparison.json) retain the evidence boundary.
+Production runs, request journal and budget rows have matching before/after logical hashes;
+the persistent counter remains 92. The private `.env` was not modified. Restart any
+existing server to load v4 before an explicitly authorized future paid run.

@@ -31,6 +31,9 @@ def main():
         fixture_mode = {"value": "error"}
         def fixture(request):
             body = json.loads(request.content)
+            context = body.get("state") if "state" in body else json.loads(body["messages"][1]["content"])["state"]
+            assert "".join(context["faces"][f].replace("/", "") for f in "URFDLB") == context["cube_facelets"]
+            assert len(context["recent_moves"]) <= 6
             inference.append(body)
             if fixture_mode["value"] == "valid":
                 effective = {"typesafe/jev-1.13": "typesafe/jev-1.13-20260917",

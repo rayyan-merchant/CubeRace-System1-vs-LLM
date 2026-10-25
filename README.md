@@ -157,19 +157,59 @@ no final JSON. The 1,024 ceiling is an experimental change, not a guaranteed fix
 Update `CLAUDE_MAX_TOKENS=1024` in your existing private `.env` manually, then restart the
 server. Defaults and `.env.example` do not override an explicit older `.env` setting.
 
-Payloads keep current state, solved goal, remaining allowance, HTM and all 18 action
-meanings. Every model sees only its **last six executed moves**, initially empty. The full
+Payloads keep the authoritative 54-character state plus lossless labeled face grids,
+an explicit whole-cube goal, remaining allowance, HTM and all 18 action meanings.
+Every model sees only its **last six executed moves**, initially empty. The full
 history still determines `moves_remaining` and is preserved internally for metrics, replay
 and exports. No conversational transcript, reasoning request or solution hint is sent.
 The three Decisions payloads have identical wording and criteria; Claude gets equivalent
-information through compact JSON. The explicit action definitions were retained for clarity,
-not shortened at the expense of fairness.
+information through compact JSON. Action definitions share degree/CW/CCW conventions.
+The redundant solved-state string and metric field are omitted: the instructions define
+the goal (every face matches its fixed center) and HTM once.
 
-The fixed policy is `state-action-v3-recent6`. Saved runs record the history window, Claude
+The fixed policy is `state-action-v4-facegrids`. Saved runs record the history window, Claude
 settings and identity-allowlist version; request records include their visible move history,
 window, remaining allowance and policy version. Old/full-history or different-setting suites
 are not pooled with the new condition. Analysis selects the newest saved suite's condition
 and shows exclusions.
+
+Grid orientations, the exact shared prompt, size measurements and diagnostic methodology
+are documented in [PROMPT_POLICY_V4.md](docs/PROMPT_POLICY_V4.md). Restart an existing server
+before using the revised policy; `python preflight.py` detects old loaded source.
+
+### First-action diagnostics (separate from the assignment benchmark)
+
+Preview two one-move states for Jev, Luna and Clef, with **zero requests**:
+
+```powershell
+.venv\Scripts\python.exe verify_cube_diagnostics.py
+```
+
+Only after explicitly approving paid execution, run:
+
+```powershell
+.venv\Scripts\python.exe verify_cube_diagnostics.py --confirm-paid
+```
+
+This authorizes at most **six requests** (two per Decisions model), with no retries or
+Claude calls. It preserves the persistent request counter and writes a unique timestamped
+`data/cube-diagnostic-depth1-*.json` report. A valid action is scored after the response;
+no scramble, correct move, scoring oracle or successor state is sent to any model.
+Wrong legal moves are recorded unchanged. Errors/NOT_RUN remain distinct from incorrect
+valid actions. The diagnostic does not execute a race or enter benchmark aggregates.
+
+Optional two-move diagnostics are a **separate** six-request execution:
+
+```powershell
+.venv\Scripts\python.exe verify_cube_diagnostics.py --depth 2
+# Paid only after separate explicit approval:
+.venv\Scripts\python.exe verify_cube_diagnostics.py --depth 2 --confirm-paid
+```
+
+They score whether the returned first action leaves a cube solvable in one further move;
+they do not request that second move. Diagnostics do not replace the final five-puzzle,
+four-model assignment benchmark, which still includes Claude. Offline fixtures establish
+implementation correctness, not improved external model accuracy or lower billed costs.
 
 ### Reported billing, not estimated spending
 

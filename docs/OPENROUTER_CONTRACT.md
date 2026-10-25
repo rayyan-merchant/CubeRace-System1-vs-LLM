@@ -91,3 +91,15 @@ A $0.90–$0.95 cumulative no-reset key limit is recommended before a budget-lim
 See [limits](https://openrouter.ai/docs/api/reference/limits) and
 [management-only key updates](https://openrouter.ai/docs/api/api-reference/api-keys/update-keys).
 No request-count ceiling guarantees a dollar total or complete five-puzzle evidence.
+
+## Observation policy v4 (offline verified)
+
+New requests use `state-action-v4-facegrids`: the authoritative facelet string plus lossless
+slash-separated labeled face grids and exact top/right viewing orientations. Shared
+instructions retain the solved goal and HTM; redundant `goal_facelets` and `metric` input
+fields are removed. All 18 action definitions remain, with common degree/CW/CCW rules.
+The three Decisions payloads differ only by ID; Claude sees equivalent state/question
+content with unchanged low/1,024 strict JSON settings. See [policy](PROMPT_POLICY_V4.md)
+for the exact prompt and the measured local token-proxy increase. There was no new live
+contract test or model-performance validation. A separate, opt-in diagnostic prepares two
+first-action states for the three Decisions models only, at most six requests, no retries.

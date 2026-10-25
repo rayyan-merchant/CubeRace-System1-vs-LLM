@@ -4,7 +4,7 @@ import json
 import time
 from dataclasses import dataclass
 import httpx
-from .cube import MOVES, SOLVED
+from .cube import MOVES, FACES
 from .config import Settings
 from .billing import reported
 
@@ -30,7 +30,9 @@ ALLOWED_EFFECTIVE_IDS = {
     "anthropic/claude-opus-5.5": {"anthropic/claude-opus-5.5"},
 }
 HISTORY_WINDOW = 6
-POLICY_VERSION = "state-action-v3-recent6"
+POLICY_VERSION = "state-action-v4-facegrids"
+FACE_ORIENTATION = {"U": "B/R", "R": "U/B", "F": "U/R",
+                    "D": "F/R", "L": "U/F", "B": "U/L"}
 
 
 def request_policy(settings):
@@ -38,20 +40,25 @@ def request_policy(settings):
             "claude_reasoning_effort": settings.claude_reasoning_effort,
             "chat_max_tokens": settings.claude_max_tokens, "concurrency": settings.concurrency,
             "history_window": HISTORY_WINDOW, "history_policy": "last-six-executed-agent-moves",
+            "state_encoding": "URFDLB-row-major-slash-grids-v1",
             "effective_id_policy": "explicit-allowlist-2026-10-25"}
 
 
 ENDPOINTS = {"decisions": "https://openrouter.ai/api/alpha/decisions",
              "chat": "https://openrouter.ai/api/v1/chat/completions"}
 INSTRUCTIONS = (
-    "Choose one move toward the goal. Facelets: row-major URFDLB, fixed centers. "
-    "Singmaster turns: clockwise viewed directly at the named face. "
-    "Half-turn metric (HTM): 180 degrees counts as one move. Limit: 30 moves."
+    "Choose one move to solve all six faces within moves_remaining. "
+    "Goal: each face matches its center. Letters denote fixed-center colors "
+    "(URFDLB=up/right/front/down/left/back). "
+    "cube_facelets is row-major URFDLB; faces uses '/' between rows. "
+    "Outside views; top/right neighbors: "
+    + ";".join(f"{f}={neighbors}" for f, neighbors in FACE_ORIENTATION.items()) + ". "
+    "Turns: degrees, CW clockwise, CCW counterclockwise, viewed at the named face. "
+    "HTM: each listed turn=1 move; 30 max."
 )
-NAMES = dict(zip("URFDLB", ("upper", "right", "front", "down", "left", "back")))
-CRITERIA = {m: f"{NAMES[m[0]]} face " +
-            ("180 degrees" if m.endswith("2") else
-             "counterclockwise 90 degrees" if m.endswith("'") else "clockwise 90 degrees")
+NAMES = dict(zip(FACES, ("up", "right", "front", "down", "left", "back")))
+CRITERIA = {m: f"{NAMES[m[0]]} " +
+            ("180" if m.endswith("2") else "90 CCW" if m.endswith("'") else "90 CW")
             for m in MOVES}
 
 
@@ -70,9 +77,11 @@ def strict_json(text):
 
 def payload(model, state, history, settings=None):
     settings = settings or Settings()
-    context = {"cube_facelets": state, "recent_moves": list(history[-HISTORY_WINDOW:]),
-               "goal_facelets": SOLVED, "moves_remaining": 30 - len(history),
-               "metric": "HTM"}
+    context = {"cube_facelets": state,
+               "faces": {f: "/".join(state[i:i + 3] for i in range(n * 9, n * 9 + 9, 3))
+                         for n, f in enumerate(FACES)},
+               "recent_moves": list(history[-HISTORY_WINDOW:]),
+               "moves_remaining": 30 - len(history)}
     question = {"type": "choice", "instructions": INSTRUCTIONS, "criteria": CRITERIA}
     if model.interface == "decisions":
         return {"model": model.id, "state": context, "questions": {"next_move": question}}
@@ -152,6 +161,7 @@ class Router:
                           "provider": None, "response_id": None, "finish_reason": None,
                           "billing": reported(None)}
                 record.update(policy_version=POLICY_VERSION, history_window=HISTORY_WINDOW,
+                              state_encoding="URFDLB-row-major-slash-grids-v1",
                               model_visible_history=list(history[-HISTORY_WINDOW:]),
                               moves_remaining=30 - len(history))
                 records.append(record)

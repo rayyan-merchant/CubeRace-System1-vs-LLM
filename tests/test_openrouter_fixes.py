@@ -58,8 +58,9 @@ def test_history_window_is_identical_without_mutating_internal_history(length):
         assert body["state"] == chat["state"]
         assert body["questions"]["next_move"] == chat["question"]
     state = chat["state"]
-    assert state == {"cube_facelets": SOLVED, "goal_facelets": SOLVED,
-                     "recent_moves": original[-6:], "moves_remaining": 30 - length, "metric": "HTM"}
+    assert state == {"cube_facelets": SOLVED,
+                     "faces": {f: "/".join([f * 3] * 3) for f in "URFDLB"},
+                     "recent_moves": original[-6:], "moves_remaining": 30 - length}
     assert history == original
     assert list(chat["question"]["criteria"]) == list(MOVES)
 
