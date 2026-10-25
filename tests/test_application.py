@@ -194,3 +194,42 @@ def test_three_puzzle_live_suite_accepts_user_request_with_mocked_provider(tmp_p
         assert all(len(r['trials']) == 4 for r in run['races'])
         assert run['budget']['used'] == 12
         assert all(t['status'] == 'API_ERROR' for r in run['races'] for t in r['trials'])
+
+@pytest.mark.parametrize('solves', [0, 1])
+def test_three_puzzle_live_analysis_answers_all_questions_without_minimum_gate(solves):
+    trials = []
+    for model_index, model in enumerate(MODELS):
+        for index in range(3):
+            solved = model_index == 0 and index < solves
+            trials.append({'model_id': model.id, 'status': 'SOLVED' if solved else 'MOVE_LIMIT',
+                'moves': ['R'] if solved else ['U'] * 30, 'elapsed_ms': 1000,
+                'optimality_gap': 0 if solved else None,
+                'requests': [{'outcome': 'VALID', 'retry': 0, 'latency_ms': 10 + model_index, 'usage': None}]})
+    run = {'mode': 'live', 'kind': 'suite', 'tier': 'primary', 'puzzle_count': 3,
+           'races': [{'trials': trials}]}
+    stats = aggregate([run])
+    assert all(row['attempted'] == 3 for row in stats['rows'])
+    answers = stats['analysis']
+    assert len(answers) == 5 and all('Insufficient live measured' not in a for a in answers)
+    assert '3 attempted trials per model' in answers[1] and 'Small sample' in answers[1]
+    if solves:
+        assert '33.3%' in answers[1] and 'Fewest mean solved moves' in answers[2]
+        assert 'provisionally choose' in answers[4]
+    else:
+        assert '0.0%' in answers[1] and 'No solved trials' in answers[2]
+        assert 'No evaluated model solved' in answers[4]
+    assert all('not evidence' in a for a in aggregate([{**run, 'mode': 'simulated'}], mode='simulated')['analysis'])
+
+
+def test_empty_and_partial_analysis_do_not_invent_missing_results():
+    assert all('Insufficient' in a for a in aggregate([])['analysis'])
+    trials = [{'model_id': m.id, 'status': 'NOT_RUN', 'moves': [], 'elapsed_ms': None,
+               'optimality_gap': None, 'requests': []} for m in MODELS]
+    trials[0].update(status='API_ERROR', elapsed_ms=100,
+        requests=[{'outcome': 'HTTP_ERROR', 'retry': 0, 'latency_ms': 100, 'usage': None}])
+    stats = aggregate([{'mode': 'live', 'kind': 'suite', 'tier': 'primary', 'puzzle_count': 3,
+                        'races': [{'trials': trials}]}])
+    assert stats['rows'][1]['solve_rate'] is None
+    assert '0\u20131 attempted trials per model' in stats['analysis'][1]
+    assert MODELS[1].label not in stats['analysis'][1]
+    assert 'missing trials' in stats['analysis'][1]

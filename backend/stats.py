@@ -59,17 +59,25 @@ def analysis(rows, mode):
     if sampled:
         fastest = min(sampled, key=lambda r: r["avg_api_latency_ms"])
         answers[0] = f"Lowest observed mean request latency: {fastest['label']} ({fastest['avg_api_latency_ms']:.1f} ms). Retries and errors included."
-    if all(r["attempted"] >= 5 for r in rows):
-        best = max(r["solve_rate"] for r in rows)
-        winners = ", ".join(r["label"] for r in rows if r["solve_rate"] == best)
-        answers[1] = f"Highest observed solve rate: {winners}, {best:.1f}%. Review status counts and missing trials."
-        quality = [r for r in rows if r["proven_solved_count"]]
+    evaluated = [r for r in rows if r["attempted"] and r["solve_rate"] is not None]
+    if evaluated:
+        best = max(r["solve_rate"] for r in evaluated)
+        winners = ", ".join(r["label"] for r in evaluated if r["solve_rate"] == best)
+        counts = [r["attempted"] for r in rows]
+        count_text = str(counts[0]) if len(set(counts)) == 1 else f"{min(counts)}\u2013{max(counts)}"
+        answers[1] = (f"Highest observed solve rate: {winners}, {best:.1f}%. "
+                      f"Sample: {count_text} attempted trials per model. Review status counts and missing trials.")
+        if min(counts) < 5:
+            answers[1] += " Small sample; descriptive results only."
+        quality = [r for r in evaluated if r["proven_solved_count"]]
         if quality:
             shortest = min(quality, key=lambda r: r["mean_moves_solved"])
             answers[2] = f"Fewest mean solved moves: {shortest['label']}, {shortest['mean_moves_solved']:.2f}; mean proven gap {shortest['mean_optimality_gap']:.2f} HTM. Solved subsets may differ."
+        else:
+            answers[2] = "No solved trials with a proven reference; shortest-solution and optimality comparisons are unavailable."
         if sampled:
             answers[3] = f"Fastest observed: {fastest['label']}; highest solve rate: {winners}. This is descriptive evidence, without a significance claim."
-        successful = [r for r in rows if r["solved"]]
+        successful = [r for r in evaluated if r["solved"]]
         if successful:
             choice = min(successful, key=lambda r: (-r["solve_rate"], r["mean_moves_solved"],
                                                     r["avg_api_latency_ms"] or float("inf")))

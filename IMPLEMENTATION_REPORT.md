@@ -544,3 +544,21 @@ checks passed. An isolated Edge browser completed a three-puzzle simulated suite
 no page errors. A mocked live API test accepted the exact reported three-puzzle request
 and retained all 12 model trials. No paid inference occurred. Screenshot retained locally
 at `data/three-puzzle-verification/three-puzzle-analysis.png`.
+
+### Analysis for small LIVE suites
+
+Follow-up: removed the separate five-attempt analysis gate as requested. All five
+questions now describe available live observations even for three-puzzle suites, with
+actual sample counts and an explicit small-sample qualification. Missing model results
+remain unknown, simulated fixtures remain non-evidence, and zero solved trials produce
+an explicit unavailable shortest-solution comparison rather than a fabricated winner.
+The five-puzzle assignment recommendation remains separate from displaying descriptive
+results. Regression coverage includes three-puzzle samples with zero/one successes and
+empty/unequal model coverage. Isolated Edge verification confirmed all five answers in
+both Benchmark Analysis and Results Slide for a three-puzzle mocked live suite, with
+12 intercepted HTTP-502 fixtures and zero paid calls. Screenshots remain local under
+`data/three-puzzle-verification/`.
+
+Final verification for the combined small-suite and analysis updates: **425 tests passed**,
+Ruff passed, JavaScript checks passed, and the targeted browser checks passed. One existing
+Starlette/AnyIO deprecation warning remains. All verification used fixtures or simulation.

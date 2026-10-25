@@ -515,3 +515,10 @@ counts. A smaller suite does not by itself fulfill the assignment's five-puzzle 
 requirement. With four models, 30 actions and zero retries, three puzzles recommend a
 360-request cap. A lower explicit cap (such as 120) is permitted but can exhaust before
 all trials finish; it never reduces the 30-action allowance or silently raises the budget.
+
+Three-puzzle LIVE suites also receive all five descriptive analysis answers. The analysis
+uses actual attempted-trial denominators, reports the sample size, and qualifies samples
+below five as small. Missing models retain unknown solve rates; empty results produce no
+conclusions. If nothing was solved, the analysis reports that shortest-solution comparisons
+are unavailable and does not invent a winning solver. Simulated results remain labeled
+as fixtures and never produce claims about real model performance.
