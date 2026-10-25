@@ -300,7 +300,7 @@ expose it to a network without adding authentication, authorization and deployme
 .venv\Scripts\python.exe run_verification.py
 ```
 
-Runs pytest, Ruff, optional Node syntax checks and an isolated full five-puzzle simulated
+Runs pytest, Ruff, optional Node syntax and Start/Abort regression checks, and an isolated full five-puzzle simulated
 suite. Writes clearly marked raw evidence to `docs/evidence/` without touching live data.
 For only tests use `python -m pytest -q`. CI repeats this on pushes. Never interpret these
 offline HTTP fixtures as successful live account/API tests.

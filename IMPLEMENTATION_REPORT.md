@@ -365,3 +365,25 @@ errors. One existing Starlette/AnyIO deprecation warning remains. Logical row ha
 the offline checks confirmed that production runs, request records and the budget table
 were unchanged. Read-only final server preflight output is retained locally in `data/` after
 starting the committed source, without adding a production race or benchmark.
+
+### Follow-up: saved LIVE loop audit and Start/Abort timing
+
+The later aborted primary suite was audited locally without OpenRouter calls. All 67
+recorded moves agreed with saved decision events, step states and independent PyCuber
+reconstruction; all 71 request contexts agreed with recorded recent history, remaining
+allowance and the persistent journal. Raw HTTP bodies were not archived, so transmitted
+bytes cannot be independently recovered. Observed loops are preserved model choices.
+Luna's HTTP 502 was recorded without retry; aborted and NOT_RUN trials remain incomplete.
+Timestamped exports and the detailed audit remain local under ignored `data/audits/`.
+
+Browser verification exposed a separate Start/Abort timing defect: Abort could target a
+previous run while the new start request was pending. Start now clears the previous ID
+and keeps Abort disabled until the new ID arrives. A Node regression test reproduces the
+old failure and passes with the fix; `run_verification.py` includes it when Node exists.
+No prompts, model settings, moves, experiment logic or historical results were changed.
+
+Verification: 281 Python tests passed (one existing AnyIO deprecation warning), Node
+regression and JavaScript syntax checks passed, Ruff passed, and isolated browser checks
+passed with 128 intercepted requests and no console errors. Production database logical
+hashes matched before and after export/replay. No paid requests were made. Local runtime
+readiness does not guarantee provider availability, solving performance or a sub-$1 suite.

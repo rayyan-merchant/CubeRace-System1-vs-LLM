@@ -57,10 +57,10 @@ async function start(kind){
   const mode=$('mode').value, count=kind==='suite'?Number($('puzzles').value):1;
   if(mode==='live'&&!$('paid-confirm').checked)throw new Error('Check the paid-call authorization in the plan below before starting live.');
   const approved=mode==='live'&&$('paid-confirm').checked;$('paid-confirm').checked=false;
-  setBusy(true);modeBadge(mode);queue=[];
+  setBusy(true);$('abort').disabled=true;runId=null;modeBadge(mode);queue=[];
   try{
     const run=await api('/api/runs',{method:'POST',body:JSON.stringify({mode,kind,puzzles:count,tier:$('tier').value,seed:Number($('seed').value),call_cap:mode==='live'?Number($('call-cap').value):0,confirm_paid_calls:approved})});
-    runId=run.id;switchTab('arena');notice(mode==='simulated'?'SIMULATED · Synthetic results':'LIVE · Race running');
+    runId=run.id;$('abort').disabled=false;switchTab('arena');notice(mode==='simulated'?'SIMULATED · Synthetic results':'LIVE · Race running');
     $('paid-confirm').checked=false;connect(runId);
   }catch(e){setBusy(false);throw e;}
 }

@@ -25,6 +25,7 @@ def main():
         print(output)
         result.check_returncode()
     if shutil.which("node"):
+        subprocess.run(["node", "--test", "tests/test_start.cjs"], cwd=root, check=True)
         for file in ("frontend/app.js", "frontend/cube.js"):
             subprocess.run(["node", "--check", file], cwd=root, check=True)
     else:
