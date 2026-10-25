@@ -12,13 +12,14 @@ import httpx
 from backend.billing import number, reported, summarize
 from backend.config import Settings
 from backend.cube import MOVES
-from backend.models import MODELS, V4_POLICY_VERSION, payload, strict_json
+from backend.models import MODELS, V4_POLICY_VERSION, POLICY_VERSION, payload, strict_json
 from backend.store import Store
 from verify_cube_diagnostics import plan, first_action_correct
 
 ENDPOINT = "https://api.openai.com/v1/decisions"
 MODEL = "gpt-6-luna"
 LEDGER_MODEL = "openai-direct/gpt-6-luna"
+POLICIES = {"v4": V4_POLICY_VERSION, "v5": POLICY_VERSION}
 
 
 class NativeSchemaError(ValueError):
@@ -33,8 +34,8 @@ class NativeRefusal(ValueError):
     pass
 
 
-def native_payload(state):
-    baseline = payload(MODELS[1], state, [], policy_version=V4_POLICY_VERSION)
+def native_payload(state, *, policy="v4"):
+    baseline = payload(MODELS[1], state, [], policy_version=POLICIES[policy])
     question = baseline["questions"]["next_move"]
     return {"model": MODEL,
             "input": [{"role": "user", "content": [{"type": "input_json", "data": baseline["state"]}]}],
@@ -90,14 +91,21 @@ def safe_metadata(value, secret):
     return value
 
 
-def preview():
+def preview(*, policy="v4", case="all"):
+    if policy not in POLICIES or case not in ("all", "1", "2"):
+        raise ValueError("Unknown diagnostic policy or case")
+    cases = plan(1)["cases"]
+    if case != "all":
+        cases = [cases[int(case) - 1]]
     return {"kind": "direct_openai_luna_diagnostic_not_benchmark", "provider": "OpenAI",
-            "endpoint": ENDPOINT, "model": MODEL, "policy_version": V4_POLICY_VERSION,
-            "paid_calls_authorized": False, "request_cap": 2, "retries": 0,
-            "cases": plan(1)["cases"]}
+            "endpoint": ENDPOINT, "model": MODEL, "policy_version": POLICIES[policy],
+            "paid_calls_authorized": False, "request_cap": len(cases), "retries": 0,
+            "cases": cases}
 
 
-async def diagnose(*, confirm_paid=False, api_key=None, settings=None, transport=None):
+async def diagnose(*, confirm_paid=False, api_key=None, settings=None, transport=None,
+                   policy="v4", case="all"):
+    selection = preview(policy=policy, case=case)
     if not confirm_paid:
         raise SystemExit("BLOCKED: explicit --confirm-paid is required")
     cfg = settings or Settings.env()
@@ -111,9 +119,9 @@ async def diagnose(*, confirm_paid=False, api_key=None, settings=None, transport
     try:
         if any(r["status"] == "RUNNING" for r in store.all()):
             raise SystemExit("BLOCKED: a saved run is active")
-        if cfg.budget - store.used() < 2:
-            raise SystemExit("BLOCKED: fewer than two persistent requests remain; budget unchanged")
-        report = {**preview(), "id": "openai-direct-diagnostic-" + uuid.uuid4().hex,
+        if cfg.budget - store.used() < selection["request_cap"]:
+            raise SystemExit("BLOCKED: insufficient persistent requests remain; budget unchanged")
+        report = {**selection, "id": "openai-direct-diagnostic-" + uuid.uuid4().hex,
                   "mode": "live", "source": "CubeRace: System-1 vs LLM",
                   "paid_calls_authorized": True, "assignment_benchmark_evidence": False,
                   "move_limit": 30, "metric": "HTM", "timeout_seconds": cfg.timeout, "results": []}
@@ -134,7 +142,7 @@ async def diagnose(*, confirm_paid=False, api_key=None, settings=None, transport
                     "request_index": len(requests) + 1, "retry": 0, "provider": "OpenAI",
                     "provider_route": "direct_openai_decisions", "endpoint": ENDPOINT,
                     "requested_model_id": MODEL, "effective_model_id": None,
-                    "policy_version": V4_POLICY_VERSION, "history_window": 6,
+                    "policy_version": POLICIES[policy], "history_window": 6,
                     "model_visible_history": [], "moves_remaining": 30, "http_status": None,
                     "request_id": None, "latency_ms": None, "outcome": "PENDING",
                     "usage": None, "provider_usage": None, "billing": reported(None)}
@@ -142,7 +150,7 @@ async def diagnose(*, confirm_paid=False, api_key=None, settings=None, transport
                 requests.append(record)
                 start = time.perf_counter()
                 try:
-                    response = await client.post(ENDPOINT, json=native_payload(case["initial_state"]),
+                    response = await client.post(ENDPOINT, json=native_payload(case["initial_state"], policy=policy),
                         headers={"Authorization": f"Bearer {key}"}, timeout=cfg.timeout)
                     record["latency_ms"] = (time.perf_counter() - start) * 1000
                     record.update(http_status=response.status_code,
@@ -152,6 +160,8 @@ async def diagnose(*, confirm_paid=False, api_key=None, settings=None, transport
                     except (ValueError, TypeError):
                         body = None
                     if isinstance(body, dict):
+                        # Retain native refusal/choice evidence, with reflected secrets redacted.
+                        record["provider_answers"] = safe_metadata(body.get("answers"), key)
                         record["effective_model_id"] = safe_metadata(body.get("model"), key)
                         usage = body.get("usage")
                         if isinstance(usage, dict):
@@ -205,17 +215,18 @@ async def diagnose(*, confirm_paid=False, api_key=None, settings=None, transport
                 # Preserve evidence even on cancellation; never insert a benchmark run.
                 now = datetime.now(timezone.utc)
                 report.update(timestamp=now.isoformat(), request_count=len(requests),
-                    billing=summarize(requests), planned_first_actions=2,
+                    billing=summarize(requests), planned_first_actions=selection["request_cap"],
                     valid_first_actions=sum(r["status"] == "VALID_RESPONSE" for r in report["results"]),
                     correct_first_actions=sum(r["first_action_correct"] is True for r in report["results"]))
                 directory = Path("data/direct-openai")
                 directory.mkdir(parents=True, exist_ok=True)
-                path = directory / f"luna-v4-{now:%Y%m%dT%H%M%S%fZ}-{report['id'][-8:]}.json"
+                path = directory / f"luna-{policy}-{now:%Y%m%dT%H%M%S%fZ}-{report['id'][-8:]}.json"
                 with path.open("x", encoding="utf-8") as file:
                     json.dump(report, file, indent=2, allow_nan=False)
                 print(json.dumps({"report": str(path), "provider": "OpenAI",
                     "request_count": len(requests), "correct_first_actions": report["correct_first_actions"],
-                    "valid_first_actions": report["valid_first_actions"], "billing": report["billing"]}))
+                    "valid_first_actions": report["valid_first_actions"], "policy_version": POLICIES[policy],
+                    "statuses": [r["status"] for r in report["results"]], "billing": report["billing"]}))
         finally:
             store.close()
     return path
@@ -225,11 +236,15 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--confirm-paid", action="store_true",
                         help="Authorize at most two direct OpenAI requests; no retries or provider fallback")
+    parser.add_argument("--policy", choices=POLICIES, default="v4",
+                        help="Fixed prompt policy; v4 baseline by default, v5 adds existing general turn rules")
+    parser.add_argument("--case", choices=("all", "1", "2"), default="all",
+                        help="Select one diagnostic state (one request) or both (at most two)")
     args = parser.parse_args(argv)
     if args.confirm_paid:
-        asyncio.run(diagnose(confirm_paid=True))
+        asyncio.run(diagnose(confirm_paid=True, policy=args.policy, case=args.case))
     else:
-        print(json.dumps(preview(), indent=2))
+        print(json.dumps(preview(policy=args.policy, case=args.case), indent=2))
 
 
 if __name__ == "__main__":

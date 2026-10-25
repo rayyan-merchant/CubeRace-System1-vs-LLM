@@ -16,13 +16,14 @@ probabilities are arrays of `{value, probability}`, and a question may return a 
 `refusal`. Usage includes input/output/total tokens, input cache details and output
 reasoning details. The documented usage object has no USD-cost field.
 
-This verifies the implemented request/response shape against documentation and fixtures.
-It does not establish account access, live endpoint availability or successful inference.
+The initial implementation verified the request/response shape against documentation and
+fixtures only. The authorized live investigation below subsequently verified account access
+and specific responses; it does not establish reliable cube solving or future availability.
 The implementation uses existing `httpx`, without SDK retry behavior or new dependencies.
 
 ## Exact v4 observation parity
 
-`native_payload()` builds the frozen v4 payload first, then translates only its interface:
+By default, `native_payload()` builds the frozen v4 payload first, then translates only its interface:
 
 ```text
 model = gpt-6-luna
@@ -37,7 +38,9 @@ questions[0] = {
 
 The authoritative 54 stickers, labeled face grids, empty agent history, 30 remaining
 actions, orientations, goal and all 18 action definitions match v4 exactly. v5 permutation
-rules are deliberately absent. The CLI uses the existing two one-turn diagnostic states,
+rules are absent unless explicitly selected with `--policy v5`. With that option, the
+instructions match the existing shared v5 policy exactly, including its general turn rules.
+The CLI uses the existing two one-turn diagnostic states,
 not a new puzzle generator. Neither scramble sequences, correct actions, scores nor
 successor previews are sent. First-action scoring happens only after a valid response,
 without changing the selected move or requesting a second action on that state.
@@ -87,8 +90,9 @@ move replacement occurs. Choice metadata must contain finite 0–1 confidence an
 finite 0–1 probability per legal option, with no duplicate values. Probabilities are
 recorded unchanged, not normalized or interpreted as solving probabilities.
 
-Reports have unique timestamped paths under ignored `data/direct-openai/luna-v4-*.json`.
-They record the direct endpoint/provider, requested/effective model, frozen v4 policy,
+Reports have unique timestamped paths under ignored `data/direct-openai/luna-v4-*.json`
+or `luna-v5-*.json`, according to the explicit selection.
+They record the direct endpoint/provider, requested/effective model, selected fixed policy,
 HTTP status, `x-request-id` when available, measured request latency, native probabilities,
 confidence, token usage, first-action correctness and failure statuses. HTTP latency
 ends when the response arrives, before parsing or observer scoring. Refusals remain
@@ -114,3 +118,52 @@ strict illegal-action/metadata rejection, explicit consent and configuration gua
 two-request ceiling, zero retries, request IDs/errors/redaction, refusals, unavailable
 identity, redirects, cancellation, usage, unknown costs, persistence and historical
 OpenRouter isolation. Test credentials/responses are fixtures, not live API evidence.
+
+## Authorized live investigation — October 25, 2026
+
+The user's original v4 run returned HTTP 200 with typed refusals for both questions.
+No key replacement was necessary. Four subsequently authorized direct requests isolated
+access from cube behavior (each was reserved in the persistent request ledger, no retries):
+
+| Ledger | Check | Outcome | Provider input tokens |
+|---|---|---|---:|
+| 101 | Small shipping/billing classification control | Correct `shipping` choice | 122 |
+| 102 | First v4 cube state as equivalent plain-text JSON | REFUSED | 107 |
+| 103 | First cube state with existing v5 mechanics instructions | Valid `F`, incorrect | 635 |
+| 104 | Second cube state through CLI `--policy v5 --case 2` | Valid `R'`, incorrect | 629 |
+
+All responses were HTTP 200 and identified `gpt-6-luna`. The four calls reported 1,493
+input tokens, zero output/reasoning tokens, and no monetary costs. Costs remain unknown;
+provider usage is not a dollar receipt. These are diagnostic observations, not benchmark
+results or proof of a causal explanation for v4 refusals or historical OpenRouter 502s.
+The refusal schema provides no explanation. Neither text serialization nor replacing the
+key is an evidence-supported fix. V5 produced answers in these two checks but did not
+solve either state; future refusals and incorrect moves remain possible.
+
+The CLI now accepts explicit `--policy v4|v5` and `--case all|1|2`. The defaults remain
+v4 and both states, so old commands do not silently switch experimental conditions.
+Selection is fixed before requests; there is no adaptive policy or provider fallback.
+A single selected case requires and consumes at most one remaining request. Both cases
+require at most two. Preview remains free, and `--confirm-paid` remains mandatory:
+
+```powershell
+# Free preview of v5:
+.venv\Scripts\python.exe verify_luna_openai.py --policy v5
+# Only with approval: both states, at most TWO paid requests:
+.venv\Scripts\python.exe verify_luna_openai.py --policy v5 --confirm-paid
+# Only with approval: one selected state, at most ONE paid request:
+.venv\Scripts\python.exe verify_luna_openai.py --policy v5 --case 2 --confirm-paid
+```
+
+Reports use policy-specific filenames (`luna-v4-*` / `luna-v5-*`), retain the chosen
+policy in every request record, and now retain redacted native `provider_answers`,
+including typed refusals. CLI summaries explicitly print statuses, avoiding ambiguity
+between wrong moves and no returned move. Original reports and benchmark runs are
+unchanged. The assignment OpenRouter adapter, four identities, fixed prompts, 30-action
+allowance, Claude settings, UI, and private `.env` are unchanged.
+
+Raw authorized evidence remains under ignored `data/direct-openai/`:
+`access-control-20261025T165858929254Z.json`,
+`cube-text-transport-20261025T165916698607Z.json`,
+`cube-v5-check-20261025T165941614602Z.json`, and
+`luna-v5-20261025T170044448943Z-c134b697.json`.

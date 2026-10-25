@@ -503,3 +503,29 @@ OpenRouter inference was made, and no native API availability or solving result 
 See [native contract, commands and evidence boundaries](docs/DIRECT_OPENAI_LUNA_DIAGNOSTIC.md)
 and the [offline verification summary](docs/evidence/direct-openai-verification.json).
 Raw local outputs/screenshots remain under ignored `data/direct-openai-verification/`.
+
+## Direct Luna refusal investigation (October 25, authorized live checks)
+
+The key was functional; a shipping/billing control returned the correct choice. Sending
+v4 cube information as plain-text JSON still produced a typed refusal. The existing v5
+mechanics policy returned valid but incorrect first actions on both diagnostic states
+(`F`, `R'`). This verifies those responses, not improved solving or guaranteed future
+availability. Four authorized calls consumed 1,493 provider-reported input tokens; all
+USD costs are unknown. They were recorded as ledger entries 101–104, separate from
+assignment benchmark results. No OpenRouter inference was performed.
+
+The optional native CLI adds explicit fixed `--policy v4|v5` and `--case all|1|2`
+selection. Defaults preserve v4 baseline behavior. Selected-case request ceilings,
+remaining-budget guards, policy-specific report names, native answer retention and
+status summaries are covered by offline tests. No key, `.env`, assignment adapter,
+UI, model identity, mechanics, or historical result was changed. See
+[diagnostic investigation](docs/DIRECT_OPENAI_LUNA_DIAGNOSTIC.md#authorized-live-investigation--october-25-2026).
+
+Validation after the investigation: **418 tests passed** (one existing Starlette/AnyIO
+deprecation warning), Ruff passed, Node regression and syntax checks passed. Isolated
+browser verification passed with 128 intercepted fixture requests, zero real OpenRouter
+requests, and no page/console errors. Raw browser evidence is under ignored
+`data/luna-refusal-verification/docs/evidence/`. The production counter is 104 with 506
+requests remaining under the unchanged configured cap. This is a request cap, not a USD
+spending cap. Public live diagnostic evidence is in
+`docs/evidence/direct-openai-refusal-investigation.json`; raw reports remain local.

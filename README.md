@@ -218,7 +218,7 @@ implementation correctness, not improved external model accuracy or lower billed
 ### Optional direct OpenAI Luna diagnostic
 
 An optional **direct OpenAI Luna** diagnostic uses the native Decisions API, the frozen
-v4 observation policy, and these same two one-turn states. It never replaces the assigned
+v4 observation policy by default (or explicit `--policy v5`), and these same two one-turn states. It never replaces the assigned
 OpenRouter adapter or enters assignment benchmark statistics:
 
 ```powershell
@@ -226,6 +226,8 @@ OpenRouter adapter or enters assignment benchmark statistics:
 .venv\Scripts\python.exe verify_luna_openai.py
 # Only after explicit approval: at most TWO paid direct OpenAI requests, no retries:
 .venv\Scripts\python.exe verify_luna_openai.py --confirm-paid
+# Explicit v5 mechanics policy, ONE selected state / at most ONE paid request:
+.venv\Scripts\python.exe verify_luna_openai.py --policy v5 --case 2 --confirm-paid
 ```
 
 It requires server-side `OPENAI_API_KEY` plus the existing live/zero-retry controls;
@@ -233,6 +235,11 @@ no OpenRouter key is required. Calls consume the persistent request cap under th
 `openai-direct/gpt-6-luna` ledger identity. Timestamped reports go to `data/direct-openai/`.
 Native costs remain unknown unless reported. Direct-provider charges are outside any
 OpenRouter key spending limit. See [native contract, safeguards and evidence boundaries](docs/DIRECT_OPENAI_LUNA_DIAGNOSTIC.md).
+
+Authorized checks on October 25 found a working key: a classification control answered,
+v4 cube input still refused, and v5 produced valid but incorrect moves on both one-turn
+states. This establishes response compatibility for those two v5 calls, not reliable
+solving or a guaranteed refusal fix. V4 results remain separate and unchanged.
 
 ### Reported billing, not estimated spending
 

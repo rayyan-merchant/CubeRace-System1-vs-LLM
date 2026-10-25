@@ -229,3 +229,55 @@ async def test_existing_openrouter_history_and_aggregates_remain_separate(tmp_pa
     assert set(store.billing()["by_model"]) == {MODELS[1].id, module.LEDGER_MODEL}
     assert store.billing()["by_model"][MODELS[1].id]["total_cost_usd"] == 0.001
     store.close()
+
+@pytest.mark.parametrize("policy", ["v4", "v5"])
+def test_selected_policy_preserves_shared_information(policy):
+    from backend.models import POLICY_VERSION
+    module = diagnostic()
+    version = V4_POLICY_VERSION if policy == 'v4' else POLICY_VERSION
+    for case in plan()["cases"]:
+        body = module.native_payload(case['initial_state'], policy=policy)
+        baseline = payload(MODELS[1], case['initial_state'], [], policy_version=version)
+        assert body['input'][0]['content'][0]['data'] == baseline['state']
+        assert body['questions'][0]['instructions'] == baseline['questions']['next_move']['instructions']
+        assert body['questions'][0]['choices'] == [
+            {'value': m, 'description': d} for m, d in baseline['questions']['next_move']['criteria'].items()]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('case', ['1', '2'])
+async def test_single_case_v5_uses_one_call_and_one_remaining_budget(tmp_path, monkeypatch, case):
+    from backend.models import POLICY_VERSION
+    module = diagnostic()
+    monkeypatch.chdir(tmp_path)
+    cfg = Settings(database=str(tmp_path / 'single.db'), allow_live=True, mock_mode=False, budget=1)
+    seen = []
+    def handler(request):
+        seen.append(json.loads(request.content))
+        return httpx.Response(200, json=native_response())
+    path = await module.diagnose(confirm_paid=True, api_key='offline', settings=cfg,
+        transport=httpx.MockTransport(handler), policy='v5', case=case)
+    report = json.loads(path.read_text())
+    assert len(seen) == report['request_count'] == report['request_cap'] == report['planned_first_actions'] == 1
+    assert report['policy_version'] == POLICY_VERSION and path.name.startswith('luna-v5-')
+    assert report['cases'] == [plan()['cases'][int(case) - 1]]
+    request = report['results'][0]['requests'][0]
+    assert request['policy_version'] == POLICY_VERSION
+    assert request['provider_answers'] == native_response()['answers']
+    assert seen[0] == module.native_payload(report['cases'][0]['initial_state'], policy='v5')
+    with pytest.raises(SystemExit):
+        await module.diagnose(confirm_paid=True, api_key='offline', settings=cfg,
+            transport=httpx.MockTransport(handler), policy='v5', case=case)
+    assert len(seen) == 1
+
+
+def test_selection_preview_is_free_and_unknown_policies_fail_closed(tmp_path, monkeypatch, capsys):
+    module = diagnostic()
+    monkeypatch.chdir(tmp_path)
+    module.main(['--policy', 'v5', '--case', '2'])
+    result = json.loads(capsys.readouterr().out)
+    assert result['request_cap'] == 1 and result['cases'] == [plan()['cases'][1]]
+    assert not result['paid_calls_authorized'] and not list(tmp_path.iterdir())
+    for kwargs in ({'policy': 'v6'}, {'case': '3'}):
+        with pytest.raises(ValueError):
+            module.preview(**kwargs)

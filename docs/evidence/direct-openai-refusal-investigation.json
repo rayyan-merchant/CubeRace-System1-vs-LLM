@@ -1,0 +1,314 @@
+{
+  "date": "2026-10-25",
+  "kind": "authorized_direct_openai_diagnostics_not_assignment_benchmark",
+  "user_authorized_paid_requests": true,
+  "request_count": 4,
+  "retries": 0,
+  "reported_input_tokens": 1493,
+  "total_cost_usd": null,
+  "unknown_cost_requests": 4,
+  "checks": [
+    {
+      "local_report": "access-control-20261025T165858929254Z.json",
+      "ledger_id": 101,
+      "provider": "OpenAI",
+      "http_status": 200,
+      "effective_model_id": "gpt-6-luna",
+      "policy_version": null,
+      "status": "RESPONSE",
+      "selected_move": null,
+      "first_action_correct": null,
+      "provider_answers": [
+        {
+          "type": "choice",
+          "name": "department",
+          "choice": "shipping",
+          "probabilities": [
+            {
+              "value": "shipping",
+              "probability": 1.0
+            },
+            {
+              "value": "billing",
+              "probability": 0.0
+            }
+          ],
+          "confidence": 1.0
+        }
+      ],
+      "provider_usage": {
+        "input_tokens": 122,
+        "input_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "output_tokens": 0,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 122
+      },
+      "latency_ms": 1160.6518000007782,
+      "cost_usd": null
+    },
+    {
+      "local_report": "cube-text-transport-20261025T165916698607Z.json",
+      "ledger_id": 102,
+      "provider": "OpenAI",
+      "http_status": 200,
+      "effective_model_id": "gpt-6-luna",
+      "policy_version": "state-action-v4-facegrids",
+      "status": "NativeRefusal",
+      "selected_move": null,
+      "first_action_correct": null,
+      "provider_answers": [
+        {
+          "type": "refusal",
+          "name": "next_move"
+        }
+      ],
+      "provider_usage": {
+        "input_tokens": 107,
+        "input_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "output_tokens": 0,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 107
+      },
+      "latency_ms": 613.9032999999472,
+      "cost_usd": null
+    },
+    {
+      "local_report": "cube-v5-check-20261025T165941614602Z.json",
+      "ledger_id": 103,
+      "provider": "OpenAI",
+      "http_status": 200,
+      "effective_model_id": "gpt-6-luna",
+      "policy_version": "state-action-v5-permutations",
+      "status": "VALID_RESPONSE",
+      "selected_move": "F",
+      "first_action_correct": false,
+      "provider_answers": [
+        {
+          "type": "choice",
+          "name": "next_move",
+          "choice": "F",
+          "probabilities": [
+            {
+              "value": "U",
+              "probability": 0.08
+            },
+            {
+              "value": "U'",
+              "probability": 0.03
+            },
+            {
+              "value": "U2",
+              "probability": 0.03
+            },
+            {
+              "value": "R",
+              "probability": 0.03
+            },
+            {
+              "value": "R'",
+              "probability": 0.06
+            },
+            {
+              "value": "R2",
+              "probability": 0.02
+            },
+            {
+              "value": "F",
+              "probability": 0.21
+            },
+            {
+              "value": "F'",
+              "probability": 0.15
+            },
+            {
+              "value": "F2",
+              "probability": 0.11
+            },
+            {
+              "value": "D",
+              "probability": 0.02
+            },
+            {
+              "value": "D'",
+              "probability": 0.03
+            },
+            {
+              "value": "D2",
+              "probability": 0.01
+            },
+            {
+              "value": "L",
+              "probability": 0.02
+            },
+            {
+              "value": "L'",
+              "probability": 0.04
+            },
+            {
+              "value": "L2",
+              "probability": 0.02
+            },
+            {
+              "value": "B",
+              "probability": 0.02
+            },
+            {
+              "value": "B'",
+              "probability": 0.08
+            },
+            {
+              "value": "B2",
+              "probability": 0.04
+            }
+          ],
+          "confidence": 0.16
+        }
+      ],
+      "provider_usage": {
+        "input_tokens": 635,
+        "input_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "output_tokens": 0,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 635
+      },
+      "latency_ms": 331.86899999782327,
+      "cost_usd": null
+    },
+    {
+      "local_report": "luna-v5-20261025T170044448943Z-c134b697.json",
+      "ledger_id": 104,
+      "provider": "OpenAI",
+      "http_status": 200,
+      "effective_model_id": "gpt-6-luna",
+      "policy_version": "state-action-v5-permutations",
+      "status": "VALID_RESPONSE",
+      "selected_move": "R'",
+      "first_action_correct": false,
+      "provider_answers": [
+        {
+          "type": "choice",
+          "name": "next_move",
+          "choice": "R'",
+          "probabilities": [
+            {
+              "value": "U",
+              "probability": 0.12
+            },
+            {
+              "value": "U'",
+              "probability": 0.05
+            },
+            {
+              "value": "U2",
+              "probability": 0.03
+            },
+            {
+              "value": "R",
+              "probability": 0.08
+            },
+            {
+              "value": "R'",
+              "probability": 0.15
+            },
+            {
+              "value": "R2",
+              "probability": 0.02
+            },
+            {
+              "value": "F",
+              "probability": 0.1
+            },
+            {
+              "value": "F'",
+              "probability": 0.07
+            },
+            {
+              "value": "F2",
+              "probability": 0.05
+            },
+            {
+              "value": "D",
+              "probability": 0.01
+            },
+            {
+              "value": "D'",
+              "probability": 0.02
+            },
+            {
+              "value": "D2",
+              "probability": 0.01
+            },
+            {
+              "value": "L",
+              "probability": 0.02
+            },
+            {
+              "value": "L'",
+              "probability": 0.06
+            },
+            {
+              "value": "L2",
+              "probability": 0.02
+            },
+            {
+              "value": "B",
+              "probability": 0.06
+            },
+            {
+              "value": "B'",
+              "probability": 0.08
+            },
+            {
+              "value": "B2",
+              "probability": 0.05
+            }
+          ],
+          "confidence": 0.1
+        }
+      ],
+      "provider_usage": {
+        "input_tokens": 629,
+        "input_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "output_tokens": 0,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 629
+      },
+      "latency_ms": 372.94610000026296,
+      "cost_usd": null
+    }
+  ],
+  "conclusion": "Key access succeeded. V4 text transport refused. Both v5 states returned legal but incorrect actions; no solving improvement or future refusal guarantee established. Existing OpenRouter behavior was not tested.",
+  "verification": {
+    "pytest_passed": 418,
+    "pytest_existing_deprecation_warnings": 1,
+    "native_tests_passed": 58,
+    "ruff": "passed",
+    "node_regression_and_syntax": "passed",
+    "browser_offline_fixture_requests": 128,
+    "browser_real_openrouter_requests": 0,
+    "browser_page_errors": [],
+    "browser_console_errors": [],
+    "persistent_requests_used_after_checks": 104,
+    "persistent_requests_remaining": 506
+  }
+}
