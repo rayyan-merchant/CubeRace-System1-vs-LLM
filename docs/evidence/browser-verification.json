@@ -98,9 +98,12 @@
     "API failure states",
     "NOT_RUN denominators",
     "billing display",
-    "live-mode replay without inference"
+    "live-mode replay without inference",
+    "dated IDs through browser Start",
+    "four independent 30-action trials",
+    "completed live fixture replay without inference"
   ],
-  "offline_fixture_inference_requests": 8,
+  "offline_fixture_inference_requests": 128,
   "real_openrouter_inference_requests": 0,
   "page_errors": [],
   "console_errors": []

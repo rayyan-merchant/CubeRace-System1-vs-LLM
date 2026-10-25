@@ -12,7 +12,7 @@ model names do not override the four assigned IDs in the PDF's requirements tabl
 |---|---|---|
 | Original complete local application | PASS | FastAPI API, vanilla frontend, cube engine, orchestration, analysis, persistence and exports |
 | Legal cube engine / exact primary reference | PASS | 18 legal moves, HTM, independent PyCuber comparisons, complete capped BFS tests through depth 5 |
-| Offline automated tests | PASS | 255 tests; actual output in `docs/evidence/pytest-output.txt` |
+| Offline automated tests | PASS | 281 tests; actual output in `docs/evidence/pytest-output.txt` |
 | Lint and JavaScript parsing | PASS | Ruff output retained; Node checked both JavaScript modules |
 | Full five-puzzle functional benchmark | PASS | 20 simulated trials, zero paid requests, raw JSON and three CSV exports retained |
 | Browser verification | PASS | Real headless Edge race/suite/replay/download/abort flows; no page or console errors |
@@ -57,7 +57,7 @@ are pinned in the requirements files. No user browser profile was used.
 
 ```text
 python run_verification.py
-255 passed, 1 warning
+281 passed, 1 warning
 All checks passed!
 PASS: five seeded puzzles, 20 simulated trials, zero paid requests; exports saved.
 
@@ -288,3 +288,80 @@ five-puzzle benchmark requires favorable solving/termination behavior and may re
 incomplete when the provider cap is reached. Do not lower one model's 30-action allowance,
 substitute results, reset budgets or hide failures. Review before explicitly starting the
 single required five-puzzle Primary benchmark, then use free replay for recording.
+
+
+## Local stale-server investigation — 2026-10-25
+
+The checkout was clean on main at expected commit `4eea3f6274a3d7e30da013838ad9dc951ef4178d`;
+fresh GitHub fetch confirmed no divergence. No pull, reset or discarded user changes were
+needed. The project venv imports this checkout's `backend/models.py`, with the exact requested
+allowlist and `state-action-v3-recent6`. Manager and smoke adapters share Router; no alternate
+live validation path was found. The old rejection string does not occur in the current adapter.
+
+The matching saved record is **cf72c4c5a9df468981e4cf617b5f3129**, started **2026-10-25
+13:23:12.887522 PKT** (08:23:12.887522 UTC). It is a **five-puzzle LIVE suite**, aborted during
+the first puzzle, with per-run request cap 120. It records **state-action-v2-compact**, low
+Claude effort, **512 tokens**, zero retries and no six-move policy. The fix commit predates
+this run (12:55:49 PKT). This proves an obsolete backend executed the run despite updated
+disk code. An unrestarted server is the likely cause. At inspection no Uvicorn process or
+listener on port 8000 remained, including elevated CIM/TCP checks; unrelated Colab Python
+processes were left alone. The old server's original PID/interpreter/working directory
+cannot now be recovered, so an obsolete alternate checkout cannot be ruled out. Replaying
+this saved record will correctly continue to show its original errors.
+
+| Model | Recorded status | Requests | Applied valid moves | HTTP / outcome | Known reported USD | Unknown-cost requests |
+|---|---|---:|---:|---|---:|---:|
+| Jev 1.13 | UNAVAILABLE | 1 | 0 | HTTP 200; old MODEL_ID_MISMATCH | 0.000033054 | 0 |
+| GPT-6 Luna Decisions | UNAVAILABLE | 1 | 0 | HTTP 200; old MODEL_ID_MISMATCH | 0.000043100 | 0 |
+| Cloudflare Clef | ABORTED | 9 | 8 | 8 HTTP 200 VALID; 1 CANCELLED | 0.000322020 | 1 |
+| Claude Opus 5.5 | ABORTED | 3 | 2 | 2 HTTP 200 VALID; 1 CANCELLED | 0.007452000 | 1 |
+
+Jev returned `typesafe/jev-1.13-20260917`; Luna returned
+`openai/gpt-6-luna-decisions-20261006`. The requests used their original assigned IDs.
+Clef/Claude returned their assigned IDs on successful responses. Cancelled requests have
+no returned effective ID or HTTP status. There were zero recorded HTTP-error or malformed
+JSON outcomes; the two identity failures were local validation errors before move parsing,
+not evidence that the external models were unavailable. Historical decisions are not
+reconstructed or rewritten as successes.
+
+Claude executed R, then R'. Its two completed responses report 879 input tokens each,
+10 and 11 completion tokens, total 1,779 tokens, and **0 reported reasoning tokens**.
+The third request (ledger 18) was cancelled: its usage/cost are unknown. Clef's cancelled
+request is ledger 21. This does not prove either cancellation was unbilled. Neither agent
+reached 30 moves or completed solving. The other 16 planned trials are NOT_RUN.
+
+Known run cost is **$0.007850174 plus 2 unknown charges**; complete total remains null.
+Cumulative application ledger: **21 requests**, **$0.041705624 known plus those 2 unknown
+charges**. By model, cumulative known USD: Jev 0.000099078, Luna 0.000129100, Clef
+0.000349446, Claude 0.041128000. The persistent limit is **610**, used **21**, remaining
+**589**; it was not raised. Five puzzles could require 600 requests at zero retries, so
+the existing request budget does not cover the worst case. Lower actual usage may fit,
+but a complete five-puzzle result below $1 cannot be guaranteed. Provider spending/limits
+were not queried in this investigation. Reconcile the two unknown charges manually in
+OpenRouter activity before relying on any dollar remainder.
+
+The private `.env` now already has ALLOW_LIVE=true, OPENROUTER_MOCK_MODE=false,
+API_RETRIES=0, CLAUDE_REASONING_EFFORT=low, CLAUDE_MAX_TOKENS=1024. No edit is required or
+performed. Student identity remains Rayyan Merchant · 23K-0073. The stale run's 512 ceiling
+is historical server configuration, not the current file's setting.
+
+The only runtime addition is non-secret startup identity on existing read-only health plus
+`preflight.py`: local-only GETs, read-only DB access, stale commit/policy/source/allowlist/
+Python/path/config rejection and request-capacity warnings. No model adapter, prompt,
+model-selected move, engine, BFS, 30-action allowance, dataset seed, metric formula,
+recording UI, budget, persistence or historical record was changed.
+
+Offline verification additionally exercises the exact UI POST/stream/read/replay/export
+routes with dated Jev/Luna IDs, Clef and strict Claude JSON at 1,024 tokens, valid solving
+completion, wrong-ID rejection, user abort with pending calls/unknown billing and all four
+independent 30-action trials. Browser checks now also complete and replay a LIVE-mode race
+using 120 intercepted dated-ID/Claude responses, alongside the existing eight failure
+fixtures. All 128 browser requests are offline fixtures, zero actual OpenRouter requests.
+Detailed normalized [read-only run audit](docs/evidence/local-run-investigation-2026-10-25.json)
+retains the evidence boundary. Final verification: **281 tests passed**, Ruff and Node
+syntax checks passed, five-puzzle simulated verification passed, and browser verification
+passed with 128 intercepted fixture calls, zero real OpenRouter calls and zero page/console
+errors. One existing Starlette/AnyIO deprecation warning remains. Logical row hashing after
+the offline checks confirmed that production runs, request records and the budget table
+were unchanged. Read-only final server preflight output is retained locally in `data/` after
+starting the committed source, without adding a production race or benchmark.

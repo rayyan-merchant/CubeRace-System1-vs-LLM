@@ -382,3 +382,57 @@ At this single observed request cost, 35 additional Claude decisions would cost 
 40 would cost $0.79632, and 150 would cost $2.9862, **excluding** prior spending and the
 other models. These are extrapolations, not measured benchmark costs or guarantees. Solve
 behavior and token use may vary. The full 30-action allowance remains in force for everyone.
+
+
+## Local preflight before recording or approving paid work
+
+Run the server from this exact checkout, then check it from a second PowerShell terminal:
+
+```powershell
+Set-Location -LiteralPath "C:\Users\RayyanMerchant.Inter\Downloads\AI Eng A2\CubeRace-System1-vs-LLM"
+.venv\Scripts\python.exe -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+```
+
+```powershell
+Set-Location -LiteralPath "C:\Users\RayyanMerchant.Inter\Downloads\AI Eng A2\CubeRace-System1-vs-LLM"
+.venv\Scripts\python.exe preflight.py
+```
+
+Preflight performs only GET requests to the local server and read-only SQLite queries.
+It never starts a run, contacts OpenRouter, changes `.env`, resets accounting or increases
+budgets. Health now includes a startup snapshot of the server PID, Python executable,
+project/module/working-directory paths, database path, Git commit, backend source hashes,
+policy version and exact model allowlist. It is captured once: updating files on disk
+cannot make an old in-memory server falsely identify itself as new.
+
+The check compares that snapshot with the current local checkout and verifies frozen server
+configuration, live enablement, zero retries, Claude low/1,024, student identity, 30 actions,
+database availability, absence of an active run and remaining request budget. An older
+server without runtime metadata fails preflight even when its basic health says OK. Never
+infer the running version from `git log` in a different terminal alone.
+
+`local_runtime_ready: true` establishes local configuration/runtime consistency, not live
+API availability or solving quality. `five_puzzle_worst_case_covered` separately says
+whether the existing counter has room for 600 requests at zero retries; a warning never
+raises the budget. Unknown charges remain unknown. Provider USD limits and balances are
+not queried by this offline preflight. Budget-limited or aborted trials are incomplete,
+not 30-move failures. Historical replay intentionally retains the original policy/statuses.
+
+After changing source or `.env`, stop **only this server** with Ctrl+C in its terminal,
+then restart with the command above. If that terminal is unavailable, inspect the exact
+port owner first:
+
+```powershell
+$taskListener = Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue
+$taskListener | Select-Object LocalAddress, LocalPort, OwningProcess
+$taskListener | ForEach-Object {
+    Get-CimInstance Win32_Process -Filter ("ProcessId = {0}" -f $_.OwningProcess) |
+        Select-Object ProcessId, ParentProcessId, ExecutablePath, CommandLine
+}
+```
+
+Only after verifying that PID belongs to the intended CubeRace Uvicorn command, stop that
+specific PID with `Stop-Process -Id <verified-PID>`. Do not stop all Python processes or use
+an unverified port owner. If nothing listens on 8000, there is no server to terminate.
+An unexpected process/checkout must be investigated before restarting. No force-pull,
+reset, database deletion or automatic paid retest is part of this procedure.

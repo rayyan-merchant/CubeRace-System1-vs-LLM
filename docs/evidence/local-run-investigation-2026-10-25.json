@@ -1,0 +1,430 @@
+{
+  "source": "Read-only local SQLite investigation; zero new inference or provider lookups",
+  "checkout_at_investigation": "4eea3f6274a3d7e30da013838ad9dc951ef4178d",
+  "run_id": "cf72c4c5a9df468981e4cf617b5f3129",
+  "timestamp_utc": "2026-10-25T08:23:12.887522+00:00",
+  "timestamp_pakistan": "2026-10-25T13:23:12.887522+05:00",
+  "mode": "live",
+  "kind": "suite",
+  "status": "ABORTED",
+  "puzzles_planned": 5,
+  "policy_version": "state-action-v2-compact",
+  "request_policy": {
+    "timeout_seconds": 30.0,
+    "retries": 0,
+    "claude_reasoning_effort": "low",
+    "chat_max_tokens": 512,
+    "concurrency": 4
+  },
+  "run_budget": {
+    "used": 14,
+    "cap": 120,
+    "run_id": "cf72c4c5a9df468981e4cf617b5f3129",
+    "race_index": 0
+  },
+  "first_puzzle_trials": [
+    {
+      "model": "typesafe/jev-1.13",
+      "label": "Jev 1.13",
+      "status": "UNAVAILABLE",
+      "executed_moves": [],
+      "successful_decisions": 0,
+      "effective_ids_observed": [
+        "typesafe/jev-1.13-20260917"
+      ],
+      "outcomes": {
+        "MODEL_ID_MISMATCH": 1
+      },
+      "http_statuses": {
+        "200": 1
+      },
+      "parsing_errors": 0,
+      "billing": {
+        "request_count": 1,
+        "known_cost_usd": 3.3054e-05,
+        "total_token_sources": {
+          "provider": 0,
+          "derived": 1
+        },
+        "unknown_cost_requests": 0,
+        "cost_complete": true,
+        "total_cost_usd": 3.3054e-05,
+        "tokens": {
+          "prompt_tokens": {
+            "known_total": 787,
+            "unknown_requests": 0
+          },
+          "completion_tokens": {
+            "known_total": 156,
+            "unknown_requests": 0
+          },
+          "total_tokens": {
+            "known_total": 943,
+            "unknown_requests": 0
+          },
+          "reasoning_tokens": {
+            "known_total": null,
+            "unknown_requests": 1
+          }
+        }
+      },
+      "unknown_ledger_ids": [],
+      "error": "Effective model ID differs; review routing"
+    },
+    {
+      "model": "openai/gpt-6-luna-decisions",
+      "label": "GPT-6 Luna Decisions",
+      "status": "UNAVAILABLE",
+      "executed_moves": [],
+      "successful_decisions": 0,
+      "effective_ids_observed": [
+        "openai/gpt-6-luna-decisions-20261006"
+      ],
+      "outcomes": {
+        "MODEL_ID_MISMATCH": 1
+      },
+      "http_statuses": {
+        "200": 1
+      },
+      "parsing_errors": 0,
+      "billing": {
+        "request_count": 1,
+        "known_cost_usd": 4.31e-05,
+        "total_token_sources": {
+          "provider": 0,
+          "derived": 1
+        },
+        "unknown_cost_requests": 0,
+        "cost_complete": true,
+        "total_cost_usd": 4.31e-05,
+        "tokens": {
+          "prompt_tokens": {
+            "known_total": 431,
+            "unknown_requests": 0
+          },
+          "completion_tokens": {
+            "known_total": 0,
+            "unknown_requests": 0
+          },
+          "total_tokens": {
+            "known_total": 431,
+            "unknown_requests": 0
+          },
+          "reasoning_tokens": {
+            "known_total": null,
+            "unknown_requests": 1
+          }
+        }
+      },
+      "unknown_ledger_ids": [],
+      "error": "Effective model ID differs; review routing"
+    },
+    {
+      "model": "cloudflare/clef",
+      "label": "Cloudflare Clef",
+      "status": "ABORTED",
+      "executed_moves": [
+        "U2",
+        "U'",
+        "U2",
+        "D2",
+        "D2",
+        "U2",
+        "U2",
+        "U2"
+      ],
+      "successful_decisions": 8,
+      "effective_ids_observed": [
+        "cloudflare/clef"
+      ],
+      "outcomes": {
+        "VALID": 8,
+        "CANCELLED": 1
+      },
+      "http_statuses": {
+        "200": 8,
+        "None": 1
+      },
+      "parsing_errors": 0,
+      "billing": {
+        "request_count": 9,
+        "known_cost_usd": 0.00032202,
+        "total_token_sources": {
+          "provider": 0,
+          "derived": 8
+        },
+        "unknown_cost_requests": 1,
+        "cost_complete": false,
+        "total_cost_usd": null,
+        "tokens": {
+          "prompt_tokens": {
+            "known_total": 5310,
+            "unknown_requests": 1
+          },
+          "completion_tokens": {
+            "known_total": 0,
+            "unknown_requests": 1
+          },
+          "total_tokens": {
+            "known_total": 5310,
+            "unknown_requests": 1
+          },
+          "reasoning_tokens": {
+            "known_total": null,
+            "unknown_requests": 9
+          }
+        }
+      },
+      "unknown_ledger_ids": [
+        21
+      ],
+      "error": null
+    },
+    {
+      "model": "anthropic/claude-opus-5.5",
+      "label": "Claude Opus 5.5",
+      "status": "ABORTED",
+      "executed_moves": [
+        "R",
+        "R'"
+      ],
+      "successful_decisions": 2,
+      "effective_ids_observed": [
+        "anthropic/claude-opus-5.5"
+      ],
+      "outcomes": {
+        "VALID": 2,
+        "CANCELLED": 1
+      },
+      "http_statuses": {
+        "200": 2,
+        "None": 1
+      },
+      "parsing_errors": 0,
+      "billing": {
+        "request_count": 3,
+        "known_cost_usd": 0.007452,
+        "total_token_sources": {
+          "provider": 2,
+          "derived": 0
+        },
+        "unknown_cost_requests": 1,
+        "cost_complete": false,
+        "total_cost_usd": null,
+        "tokens": {
+          "prompt_tokens": {
+            "known_total": 1758,
+            "unknown_requests": 1
+          },
+          "completion_tokens": {
+            "known_total": 21,
+            "unknown_requests": 1
+          },
+          "total_tokens": {
+            "known_total": 1779,
+            "unknown_requests": 1
+          },
+          "reasoning_tokens": {
+            "known_total": 0,
+            "unknown_requests": 1
+          }
+        }
+      },
+      "unknown_ledger_ids": [
+        18
+      ],
+      "error": null
+    }
+  ],
+  "later_not_run_trials": 16,
+  "run_billing": {
+    "request_count": 14,
+    "known_cost_usd": 0.007850174,
+    "total_token_sources": {
+      "provider": 2,
+      "derived": 10
+    },
+    "unknown_cost_requests": 2,
+    "cost_complete": false,
+    "total_cost_usd": null,
+    "tokens": {
+      "prompt_tokens": {
+        "known_total": 8286,
+        "unknown_requests": 2
+      },
+      "completion_tokens": {
+        "known_total": 177,
+        "unknown_requests": 2
+      },
+      "total_tokens": {
+        "known_total": 8463,
+        "unknown_requests": 2
+      },
+      "reasoning_tokens": {
+        "known_total": 0,
+        "unknown_requests": 12
+      }
+    }
+  },
+  "cumulative_billing": {
+    "request_count": 21,
+    "known_cost_usd": 0.041705624,
+    "total_token_sources": {
+      "provider": 4,
+      "derived": 15
+    },
+    "unknown_cost_requests": 2,
+    "cost_complete": false,
+    "total_cost_usd": null,
+    "tokens": {
+      "prompt_tokens": {
+        "known_total": 13135,
+        "unknown_requests": 2
+      },
+      "completion_tokens": {
+        "known_total": 1820,
+        "unknown_requests": 2
+      },
+      "total_tokens": {
+        "known_total": 14955,
+        "unknown_requests": 2
+      },
+      "reasoning_tokens": {
+        "known_total": 1321,
+        "unknown_requests": 17
+      }
+    }
+  },
+  "cumulative_by_model": {
+    "anthropic/claude-opus-5.5": {
+      "request_count": 5,
+      "known_cost_usd": 0.041128,
+      "total_token_sources": {
+        "provider": 4,
+        "derived": 0
+      },
+      "unknown_cost_requests": 1,
+      "cost_complete": false,
+      "total_cost_usd": null,
+      "tokens": {
+        "prompt_tokens": {
+          "known_total": 3522,
+          "unknown_requests": 1
+        },
+        "completion_tokens": {
+          "known_total": 1352,
+          "unknown_requests": 1
+        },
+        "total_tokens": {
+          "known_total": 4874,
+          "unknown_requests": 1
+        },
+        "reasoning_tokens": {
+          "known_total": 1321,
+          "unknown_requests": 1
+        }
+      }
+    },
+    "cloudflare/clef": {
+      "request_count": 10,
+      "known_cost_usd": 0.000349446,
+      "total_token_sources": {
+        "provider": 0,
+        "derived": 9
+      },
+      "unknown_cost_requests": 1,
+      "cost_complete": false,
+      "total_cost_usd": null,
+      "tokens": {
+        "prompt_tokens": {
+          "known_total": 5963,
+          "unknown_requests": 1
+        },
+        "completion_tokens": {
+          "known_total": 0,
+          "unknown_requests": 1
+        },
+        "total_tokens": {
+          "known_total": 5963,
+          "unknown_requests": 1
+        },
+        "reasoning_tokens": {
+          "known_total": null,
+          "unknown_requests": 10
+        }
+      }
+    },
+    "openai/gpt-6-luna-decisions": {
+      "request_count": 3,
+      "known_cost_usd": 0.0001291,
+      "total_token_sources": {
+        "provider": 0,
+        "derived": 3
+      },
+      "unknown_cost_requests": 0,
+      "cost_complete": true,
+      "total_cost_usd": 0.0001291,
+      "tokens": {
+        "prompt_tokens": {
+          "known_total": 1291,
+          "unknown_requests": 0
+        },
+        "completion_tokens": {
+          "known_total": 0,
+          "unknown_requests": 0
+        },
+        "total_tokens": {
+          "known_total": 1291,
+          "unknown_requests": 0
+        },
+        "reasoning_tokens": {
+          "known_total": null,
+          "unknown_requests": 3
+        }
+      }
+    },
+    "typesafe/jev-1.13": {
+      "request_count": 3,
+      "known_cost_usd": 9.9078e-05,
+      "total_token_sources": {
+        "provider": 0,
+        "derived": 3
+      },
+      "unknown_cost_requests": 0,
+      "cost_complete": true,
+      "total_cost_usd": 9.9078e-05,
+      "tokens": {
+        "prompt_tokens": {
+          "known_total": 2359,
+          "unknown_requests": 0
+        },
+        "completion_tokens": {
+          "known_total": 468,
+          "unknown_requests": 0
+        },
+        "total_tokens": {
+          "known_total": 2827,
+          "unknown_requests": 0
+        },
+        "reasoning_tokens": {
+          "known_total": null,
+          "unknown_requests": 3
+        }
+      }
+    }
+  },
+  "persistent_requests": {
+    "used": 21,
+    "limit": 610,
+    "remaining": 589
+  },
+  "findings": [
+    "A v2/512 backend executed this run after the v3 fix commit; current fresh imports are v3/1024.",
+    "No process was listening on port 8000 during initial inspection; original PID and checkout cannot be recovered.",
+    "Likely unrestarted stale Python server; an obsolete alternate checkout cannot be independently ruled out after exit.",
+    "Jev/Luna received HTTP 200 and expected dated IDs; obsolete application validation rejected them.",
+    "Saved historical replay retains these errors intentionally; it is not a new API call.",
+    "Clef/Claude were cancelled by the user abort, not move-limit failures. No trial reached 30 moves.",
+    "Cancelled requests have unknown billing; no provider lookup was attempted. No history or counters were changed."
+  ]
+}

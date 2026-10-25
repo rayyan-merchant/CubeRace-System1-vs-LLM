@@ -112,7 +112,9 @@ async def test_real_adapter_orchestration_move_cap_and_empty_initial_history(tmp
         model = next(m for m in MODELS if m.id == body["model"])
         context = body.get("state") or json.loads(body["messages"][1]["content"])["state"]
         seen.append((model.id, context))
-        return httpx.Response(200, json=response(model, "R"))
+        effective = {MODELS[0].id: "typesafe/jev-1.13-20260917",
+                     MODELS[1].id: "openai/gpt-6-luna-decisions-20261006"}.get(model.id, model.id)
+        return httpx.Response(200, json={**response(model, "R"), "model": effective})
     cfg = Settings(key="test", allow_live=True, mock_mode=False, database=str(tmp_path / "test.db"))
     store = Store(cfg.database)
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:

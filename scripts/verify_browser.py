@@ -28,8 +28,20 @@ def main():
     with tempfile.TemporaryDirectory() as tmp:
         # Dummy credentials + an exhaustive MockTransport: live UI paths never reach OpenRouter.
         inference = []
+        fixture_mode = {"value": "error"}
         def fixture(request):
-            inference.append(json.loads(request.content))
+            body = json.loads(request.content)
+            inference.append(body)
+            if fixture_mode["value"] == "valid":
+                effective = {"typesafe/jev-1.13": "typesafe/jev-1.13-20260917",
+                             "openai/gpt-6-luna-decisions": "openai/gpt-6-luna-decisions-20261006"}.get(body["model"], body["model"])
+                result = {"model": effective, "usage": {"input_tokens": 12, "output_tokens": 2, "cost": 0.0001}}
+                if "messages" in body:
+                    assert body["max_tokens"] == 1024 and body["reasoning"] == {"effort": "low"}
+                    result["choices"] = [{"message": {"content": '{"move":"R"}'}, "finish_reason": "stop"}]
+                else:
+                    result["answers"] = {"next_move": {"type": "choice", "choice": "R"}}
+                return httpx.Response(200, json=result)
             return httpx.Response(400, json={"error": {"message": "offline route fixture"},
                                             "usage": {"cost": 0.0001}})
         with (evidence / "browser-server.log").open("w", encoding="utf-8") as log:
@@ -244,6 +256,27 @@ def main():
                     page.locator('[data-tab="analysis"]').click()
                     page.locator("#refresh").click()
                     assert len(inference) == 8
+                    # The same browser Start/stream/replay path now accepts dated IDs.
+                    # Constant R is deliberately a test fixture, not a solving policy.
+                    fixture_mode["value"] = "valid"
+                    page.locator('[data-tab="arena"]').click()
+                    page.locator("#mode").select_option("live")
+                    page.locator("#speed").select_option("100")
+                    page.locator("#call-cap").fill("120")
+                    page.locator("#paid-confirm").check()
+                    page.locator("#start").click()
+                    expect(page.locator("#start")).to_be_enabled(timeout=45000)
+                    for i in range(4):
+                        expect(page.locator(f"#status-{i}")).to_have_text("MOVE LIMIT")
+                        expect(page.locator(f"#moves-{i}")).to_have_text("30/30")
+                    assert len(inference) == 128
+                    page.add_style_tag(url=base + "/static/browser-fixture.css")
+                    page.screenshot(path=str(evidence / "offline-live-dated-ids-completed.png"), full_page=True)
+                    page.locator('[data-tab="analysis"]').click()
+                    with page.expect_response(lambda r: r.url.endswith("/api/config")):
+                        page.locator(".replay").first.click()
+                    expect(page.locator("#start")).to_be_enabled(timeout=30000)
+                    assert len(inference) == 128
                     browser.close()
                 report = {"mode": "simulated", "source": "actual headless browser on isolated localhost",
                     "checks": checks, "flows": ["initial arena", "race", "30 cap", "five-puzzle suite",
@@ -251,7 +284,9 @@ def main():
                         "empty results", "dynamic slide context", "four assigned names", "unclipped desktop tables",
                         "scramble controls", "six-face expansion", "running controls", "abort", "mobile",
                         "paid consent with offline transport", "API failure states", "NOT_RUN denominators",
-                        "billing display", "live-mode replay without inference"],
+                        "billing display", "live-mode replay without inference",
+                        "dated IDs through browser Start", "four independent 30-action trials",
+                        "completed live fixture replay without inference"],
                     "offline_fixture_inference_requests": len(inference),
                     "real_openrouter_inference_requests": 0,
                     "page_errors": errors, "console_errors": console_errors}

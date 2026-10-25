@@ -19,6 +19,7 @@ from .races import Manager, puzzle
 from .stats import aggregate
 from .store import Store
 from .billing import summarize
+from .runtime import runtime_info
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -44,6 +45,9 @@ class StartRequest(BaseModel):
 
 def create_app(settings=None, transport=None):
     settings = settings or Settings.env()
+    # Capture once, never recompute from changed files when an old server is queried.
+    startup_runtime = runtime_info()
+    startup_runtime["database"] = str(Path(settings.database).resolve())
 
     @asynccontextmanager
     async def lifespan(app):
@@ -75,7 +79,7 @@ def create_app(settings=None, transport=None):
 
     @app.get("/api/health")
     async def health():
-        return {"status": "ok", "name": "CubeRace: System-1 vs LLM"}
+        return {"status": "ok", "name": "CubeRace: System-1 vs LLM", "runtime": startup_runtime}
 
     @app.get("/api/config")
     async def config():

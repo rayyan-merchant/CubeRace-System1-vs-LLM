@@ -1,11 +1,11 @@
-........................................................................ [ 28%]
-........................................................................ [ 56%]
-........................................................................ [ 84%]
-.......................................                                  [100%]
+........................................................................ [ 25%]
+........................................................................ [ 51%]
+........................................................................ [ 76%]
+.................................................................        [100%]
 ============================== warnings summary ===============================
 .venv\lib\site-packages\starlette\testclient.py:51
   <PROJECT_ROOT>\.venv\lib\site-packages\starlette\testclient.py:51: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
     _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-255 passed, 1 warning in 211.57s (0:03:31)
+281 passed, 1 warning in 161.78s (0:02:41)
