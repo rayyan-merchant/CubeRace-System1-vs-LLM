@@ -233,3 +233,10 @@ def test_empty_and_partial_analysis_do_not_invent_missing_results():
     assert '0\u20131 attempted trials per model' in stats['analysis'][1]
     assert MODELS[1].label not in stats['analysis'][1]
     assert 'missing trials' in stats['analysis'][1]
+
+
+def test_local_pages_api_and_modules_do_not_cache_stale_routing(client):
+    for path in ('/', '/api/config', '/static/app.js', '/static/cube.js'):
+        result = client.get(path)
+        assert result.status_code == 200 and result.headers['cache-control'] == 'no-store'
+    assert '/static/app.js?v=20261026-native-luna' in client.get('/').text

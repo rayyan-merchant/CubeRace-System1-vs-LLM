@@ -37,7 +37,7 @@ function drawTrial(i,t){
   $(`latency-${i}`).textContent=t.avg_api_latency_ms!=null?fmt(t.avg_api_latency_ms,0):lat.length?fmt(lat.reduce((a,b)=>a+b.latency_ms,0)/lat.length,0):'N/A';
   $(`current-${i}`).textContent=t.moves.at(-1)||'—';
   $(`history-${i}`).textContent=t.moves.join('  ')||'No moves';
-  $(`status-${i}`).textContent=t.status.replaceAll('_',' ');
+  $(`status-${i}`).textContent=(t.status==='API_ERROR'&&t.requests?.at(-1)?.outcome==='REFUSED'?'REFUSED':t.status).replaceAll('_',' ');
   $(`status-${i}`).classList.toggle('solved',t.status==='SOLVED');
   $(`rank-${i}`).textContent=t.rank?`#${t.rank}`:'—';
   $(`track-${i}`).style.width=`${t.moves.length/30*100}%`;

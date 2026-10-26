@@ -602,3 +602,25 @@ Full isolated browser verification passed (128 intercepted fixtures, no real pro
 calls or page/console errors), as did the separate native Start/Replay browser check.
 One existing Starlette/AnyIO dependency deprecation warning remains. No paid calls were
 made during this correction. The private .env was not modified.
+
+## Refusal display and stale frontend correction (October 26)
+
+Read-only inspection of run 25c8e580127c477c94ca10fc4ac6ba70 confirmed native OpenAI
+HTTP 200, effective model gpt-6-luna, typed REFUSED outcome, 106 input tokens, zero
+output/reasoning tokens, and no reported USD cost. The provider supplied no refusal
+explanation. It was not an authentication or OpenRouter routing failure. Jev/Clef were
+aborted after ten moves each and Claude before a returned move; none is a 30-move
+completed failure. No inference was made to investigate this run.
+
+The screenshot still showed the old frontend (no native-provider labels). The server's
+current app.js matched the local updated source but had no cache-control header. Added
+no-store headers and an explicit module URL version so reloads fetch current controls.
+Native refusals now have terminal REFUSED status. Historical API_ERROR records whose
+request outcome is REFUSED display that label without rewriting SQLite or exports.
+A Node regression checks this read-only historical presentation. This improves provenance
+and diagnosis; it does not guarantee the model will answer or solve a cube. No prompts,
+provider settings, selected moves or old results were changed.
+
+Validation: 52 affected Python tests passed, Ruff passed, JavaScript syntax checks passed,
+and both Node regressions passed (including historical refusal rendering). One existing
+Starlette/AnyIO deprecation warning remains. No paid request or experiment rerun occurred.

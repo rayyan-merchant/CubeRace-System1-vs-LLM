@@ -109,7 +109,7 @@ def test_ui_native_route_exact_context_billing_and_read_only_replay(tmp_path, mo
             == (
                 {
                     "valid": "SOLVED",
-                    "refused": "API_ERROR",
+                    "refused": "REFUSED",
                     "502": "API_ERROR",
                     "wrong_id": "UNAVAILABLE",
                     "schema": "API_ERROR",

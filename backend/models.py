@@ -251,7 +251,7 @@ class Router:
                                     move, meta = native.parse_native(body)
                                 except native.NativeRefusal:
                                     record["outcome"] = "REFUSED"
-                                    raise ModelFailure("API_ERROR", "OpenAI refused next_move; no move or fallback")
+                                    raise ModelFailure("REFUSED", "OpenAI declined to choose a move; no retry or fallback")
                                 except native.NativeSchemaError as exc:
                                     raise UnsupportedSchema(str(exc))
                             else:

@@ -73,6 +73,8 @@ def create_app(settings=None, transport=None):
             if origin and urlparse(origin).netloc != request.url.netloc:
                 return JSONResponse({"detail": "Cross-origin mutation refused"}, status_code=403)
         response = await call_next(request)
+        # Local experiment controls and ES modules must not outlive a source update.
+        response.headers["Cache-Control"] = "no-store"
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "no-referrer"
         response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'"
