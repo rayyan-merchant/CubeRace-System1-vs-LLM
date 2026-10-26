@@ -22,12 +22,13 @@ function decorate(container){
 }
 function drawCards(state){
   activeTrials=config.models.map(()=>({state,moves:[],requests:[],status:'READY',elapsed_ms:null,rank:null}));
-  $('cards').innerHTML=config.models.map((m,i)=>`<article class="race-card" id="card-${i}"><div class="card-header"><span class="agent-icon">0${i+1}</span><div><h3>${escape(m.label)}</h3><span class="category">${displayMode==='simulated'?'SIMULATED · ':''}${m.interface==='chat'?'LLM':'System-1'}</span></div><span class="rank" id="rank-${i}">—</span></div><div class="card-body"><div id="cube-${i}">${cubeSVG(state)}</div><div><div class="card-status" id="status-${i}">READY</div><div class="card-metrics"><div><strong id="moves-${i}">0<span>/30</span></strong><span>Moves · HTM</span></div><div><strong id="time-${i}">—</strong><span>Attempt · sec</span></div><div><strong id="latency-${i}">N/A</strong><span>API · ms</span></div></div><div class="track"><span id="track-${i}"></span></div><div class="current">Current move <b id="current-${i}">—</b></div><div class="card-error" id="error-${i}"></div></div></div><div class="move-history" id="history-${i}">No moves</div><details class="card-net"><summary>Six-face view</summary><div id="net-${i}">${cubeNet(state)}</div></details></article>`).join('');
+  $('cards').innerHTML=config.models.map((m,i)=>`<article class="race-card" id="card-${i}"><div class="card-header"><span class="agent-icon">0${i+1}</span><div><h3>${escape(m.label)}</h3><span class="category">${displayMode==='simulated'?'SIMULATED · ':''}${m.interface==='chat'?'LLM':'System-1'}<span id="provider-${i}">${displayMode==='live'?' · '+(i===1&&config.luna_provider==='openai'?'OpenAI':'OpenRouter'):''}</span></span></div><span class="rank" id="rank-${i}">—</span></div><div class="card-body"><div id="cube-${i}">${cubeSVG(state)}</div><div><div class="card-status" id="status-${i}">READY</div><div class="card-metrics"><div><strong id="moves-${i}">0<span>/30</span></strong><span>Moves · HTM</span></div><div><strong id="time-${i}">—</strong><span>Attempt · sec</span></div><div><strong id="latency-${i}">N/A</strong><span>API · ms</span></div></div><div class="track"><span id="track-${i}"></span></div><div class="current">Current move <b id="current-${i}">—</b></div><div class="card-error" id="error-${i}"></div></div></div><div class="move-history" id="history-${i}">No moves</div><details class="card-net"><summary>Six-face view</summary><div id="net-${i}">${cubeNet(state)}</div></details></article>`).join('');
   config.models.forEach((_,i)=>$(`card-${i}`).style.setProperty('--card-color',colors[i]));
   decorate($('cards'));
 }
 function drawTrial(i,t){
   activeTrials[i]=t;
+  if(t.mode==='live'||displayMode==='live'){const req=t.requests||[];if(req.length)$(`provider-${i}`).textContent=' · '+(req.at(-1).provider_route==='direct_openai_decisions'?'OpenAI':'OpenRouter');}
   $(`cube-${i}`).innerHTML=cubeSVG(t.state);
   $(`net-${i}`).innerHTML=cubeNet(t.state);decorate($(`net-${i}`));
   $(`moves-${i}`).innerHTML=`${t.moves.length}<span>/30</span>`;
@@ -50,7 +51,7 @@ function updatePlan(){
   $('persistent-billing').textContent=`Requests ${config.budget_used}/${config.budget_limit} · ${cost(config.billing)}`;
   $('recommended-cap').textContent=`Recommended cap: race ${per} · suite ${n*per} requests.`;
   $('live-plan').hidden=document.body.classList.contains('presentation-mode')||$('mode').value!=='live';
-  $('call-plan').textContent=`Paid OpenRouter requests · ${config.retries} retries · token charges vary by model.`;
+  $('call-plan').textContent=`Paid API requests · ${config.retries} retries · ${config.luna_provider==='openai'?'Luna: OpenAI; other models: OpenRouter.':'OpenRouter.'}`;
   $('budget').textContent=`Persistent requests: ${config.budget_used} / ${config.budget_limit} · ${cost(config.billing)}`;
 }
 async function start(kind){
@@ -105,7 +106,7 @@ async function refreshStats(){
   $('summary').innerHTML=[[stats.suite_count,'Saved suites'],[trials,'Completed attempts'],[solved,'Solved trials'],[mode==='live'?'LIVE':'SIMULATED','Evidence source']].map(([v,k])=>`<div class="tile"><strong>${v}</strong><span>${k}</span></div>`).join('');
   const tierLabel={primary:'Primary Benchmark',warmup:'Warm-up',extension:'Extension'}[tier];
   const puzzles=Math.max(0,...stats.rows.map(r=>r.planned));
-  const context=`${mode.toUpperCase()} · ${tierLabel} · ${puzzles} ${puzzles===1?'Puzzle':'Puzzles'}`;
+  const context=`${mode.toUpperCase()} · ${tierLabel} · ${puzzles} ${puzzles===1?'Puzzle':'Puzzles'}${mode==='live'&&puzzles?' · '+(stats.request_policy?.luna_route?.provider==='OpenAI'?'Luna: OpenAI; others: OpenRouter':'OpenRouter'):''}`;
   $('table-caption').textContent=`${context}${mode==='simulated'?' · Synthetic results':''}${stats.excluded_policy_suites?` · ${stats.excluded_policy_suites} suites excluded (different settings)`:''}`;
   $('table-caption').title=stats.denominator;
   $('suite-billing').textContent=`Selected suites: ${stats.billing.request_count} requests · ${cost(stats.billing)}`;
@@ -116,13 +117,14 @@ async function refreshStats(){
   $('slide-note').textContent=`${mode==='simulated'?'Synthetic results; no model performance measured. ':trials?'Descriptive results; no significance claim. ':'No live results recorded. '}Solve rate includes started failures; NOT_RUN excluded. Gap: proven solved trials only.`;
   $('slide-results').innerHTML=`<div class="table-wrap"><table><thead><tr><th>Agent</th><th>Solve rate</th><th>API latency</th><th>Attempt time</th><th>Moves, all</th><th>Moves, solved</th><th>Proven gap</th><th>Diagnostics</th></tr></thead><tbody>${tableRows(stats)}</tbody></table></div>`;
   $('slide-answers').innerHTML=$('answers').innerHTML;
-  $('history').innerHTML=runs.length?runs.map(r=>`<div class="saved-run"><span><b>${escape(r.mode.toUpperCase())}</b> · ${escape(r.tier)} · ${r.puzzle_count} puzzle(s) · ${escape(r.status)} · ${escape(cost(r.billing))}<br>${escape(r.timestamp)} · ${r.id.slice(0,8)}</span><span><button class="secondary replay" data-id="${r.id}" ${busy?'disabled':''}>Replay</button>${['json','csv','steps.csv','requests.csv'].map(f=>`<a href="/api/runs/${r.id}/export/${f}">${f.toUpperCase()}</a>`).join('')}</span></div>`).join(''):'No saved runs.';
+  $('history').innerHTML=runs.length?runs.map(r=>`<div class="saved-run"><span><b>${escape(r.mode.toUpperCase())}</b> · ${escape(r.tier)} · ${r.puzzle_count} puzzle(s)${r.mode==='live'?' · '+(r.request_policy?.luna_route?.provider==='OpenAI'?'Luna: OpenAI':'OpenRouter'):''} · ${escape(r.status)} · ${escape(cost(r.billing))}<br>${escape(r.timestamp)} · ${r.id.slice(0,8)}</span><span><button class="secondary replay" data-id="${r.id}" ${busy?'disabled':''}>Replay</button>${['json','csv','steps.csv','requests.csv'].map(f=>`<a href="/api/runs/${r.id}/export/${f}">${f.toUpperCase()}</a>`).join('')}</span></div>`).join(''):'No saved runs.';
   for(const button of document.querySelectorAll('.replay'))button.onclick=()=>safe(async()=>{const run=await api(`/api/runs/${button.dataset.id}`);if(run.status==='RUNNING')throw new Error('Wait for the run to finish before replaying.');queue=run.events.map(e=>({type:e.event,data:e.data}));runId=run.id;modeBadge(run.mode);switchTab('arena');setBusy(true);$('abort').disabled=true;notice('Replaying saved run');pump();});
 }
 async function safe(action){try{await action();}catch(e){notice(e.message,true);}}
 async function boot(){
   config=await api('/api/config');
   $('mode').querySelector('[value="live"]').disabled=!config.live_enabled;
+  $('mode').querySelector('[value="live"]').textContent=config.live_source_label||'Live OpenRouter';
   for(const button of document.querySelectorAll('.tab'))button.onclick=()=>switchTab(button.dataset.tab);
   $('generate').onclick=()=>safe(async()=>{$('paid-confirm').checked=false;$('seed').value=Number($('seed').value)+1;await generate();updatePlan();});
   $('tier').onchange=()=>{$('paid-confirm').checked=false;safe(async()=>{await generate();updatePlan();});};$('seed').onchange=()=>{$('paid-confirm').checked=false;safe(async()=>{await generate();updatePlan();});};

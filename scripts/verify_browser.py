@@ -246,7 +246,7 @@ def main():
                     page.locator('[data-tab="analysis"]').click()
                     page.locator("#stats-mode").select_option("live")
                     expect(page.locator("#stats-rows")).to_contain_text("NOT_RUN: 4")
-                    expect(page.locator("#slide-provenance")).to_have_text("LIVE · Primary Benchmark · 5 Puzzles")
+                    expect(page.locator("#slide-provenance")).to_have_text("LIVE · Primary Benchmark · 5 Puzzles · OpenRouter")
                     capture_views(page, "offline-live-errors-")
                     page.set_viewport_size({"width": 1366, "height": 768})
                     page.locator('[data-tab="analysis"]').click()

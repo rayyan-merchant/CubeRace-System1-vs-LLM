@@ -53,7 +53,8 @@ def check(base_url="http://127.0.0.1:8000", *, client=None, settings=None):
     checks["local_allowlist"] = local["allowed_effective_ids"] == EXPECTED_IDS
     checks["local_claude"] = settings.claude_reasoning_effort == "low" and settings.claude_max_tokens == 1024
     checks["local_zero_retries"] = settings.retries == 0
-    checks["local_live_enabled"] = bool(settings.key and settings.allow_live and not settings.mock_mode)
+    checks["local_live_enabled"] = bool(settings.key and settings.allow_live and not settings.mock_mode
+        and (settings.luna_provider != "openai" or settings.openai_key.strip()))
     database = None
     try:
         database = database_status(settings.database)
@@ -71,6 +72,7 @@ def check(base_url="http://127.0.0.1:8000", *, client=None, settings=None):
             response.raise_for_status()
             target.update(response.json())
         checks["server_health"] = health.get("status") == "ok"
+        checks["server_luna_provider"] = config.get("luna_provider", "openrouter") == settings.luna_provider
         server = health.get("runtime") or {}
         if not isinstance(server, dict):
             raise ValueError("Invalid runtime metadata")

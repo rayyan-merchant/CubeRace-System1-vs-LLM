@@ -39,7 +39,8 @@ async def diagnose(*, depth=1, confirm_paid=False, settings=None, transport=None
         raise SystemExit("BLOCKED: explicit --confirm-paid is required")
     report = plan(depth)
     settings = settings or Settings.env()
-    if not settings.key or not settings.allow_live or settings.mock_mode:
+    if (not settings.key or not settings.allow_live or settings.mock_mode
+            or (settings.luna_provider == "openai" and not settings.openai_key.strip())):
         raise SystemExit("BLOCKED: configure server-side key, ALLOW_LIVE=true, OPENROUTER_MOCK_MODE=false")
     if settings.retries != 0:
         raise SystemExit("BLOCKED: diagnostics require API_RETRIES=0; no configuration was changed")

@@ -34,8 +34,11 @@ async def smoke(models=MODELS, *, confirm_paid=False, settings=None):
     if not models or len(set(models)) != len(models) or any(m not in MODELS for m in models):
         raise SystemExit("BLOCKED: select unique assigned models only")
     settings = replace(settings or Settings.env(), retries=0)
-    if not settings.key or not settings.allow_live or settings.mock_mode:
-        raise SystemExit("BLOCKED: configure OPENROUTER_API_KEY, ALLOW_LIVE=true, OPENROUTER_MOCK_MODE=false")
+    native_luna = settings.luna_provider == "openai" and MODELS[1] in models
+    needs_router = any(m != MODELS[1] or settings.luna_provider != "openai" for m in models)
+    if ((needs_router and not settings.key.strip()) or (native_luna and not settings.openai_key.strip())
+            or not settings.allow_live or settings.mock_mode):
+        raise SystemExit("BLOCKED: configure selected provider keys, ALLOW_LIVE=true, OPENROUTER_MOCK_MODE=false")
     store = Store(settings.database)
     budget = {"used": 0, "cap": len(models)}
     results = []
@@ -57,6 +60,7 @@ async def smoke(models=MODELS, *, confirm_paid=False, settings=None):
                 last = records[-1] if records else {}
                 print(json.dumps({"requested_model_id": model.id,
                     "effective_model_id": last.get("effective_model_id"), "status": entry["status"],
+                    "api_provider": last.get("api_provider"), "endpoint": last.get("endpoint"),
                     "outcome": last.get("outcome", entry["status"]), "http_status": last.get("http_status"),
                     "finish_reason": last.get("finish_reason"), "usage": last.get("usage"),
                     "billing": reported(last.get("usage"))}))

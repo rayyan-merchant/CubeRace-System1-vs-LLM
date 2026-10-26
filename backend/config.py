@@ -8,6 +8,8 @@ load_dotenv()
 @dataclass(frozen=True)
 class Settings:
     key: str = ""
+    openai_key: str = ""
+    luna_provider: str = "openrouter"
     allow_live: bool = False
     mock_mode: bool = True
     budget: int = 1200
@@ -21,6 +23,8 @@ class Settings:
     database: str = "data/cuberace.sqlite3"
 
     def __post_init__(self):
+        if self.luna_provider not in {"openai", "openrouter"}:
+            raise ValueError("LUNA_PROVIDER must be openai or openrouter; no automatic fallback")
         if self.claude_reasoning_effort not in {"low", "medium", "high", "xhigh", "max"}:
             raise ValueError("CLAUDE_REASONING_EFFORT must be low, medium, high, xhigh or max; reasoning stays enabled")
         if not 32 <= self.claude_max_tokens <= 128000:
@@ -30,6 +34,8 @@ class Settings:
     def env(cls):
         return cls(
             key=os.getenv("OPENROUTER_API_KEY", ""),
+            openai_key=os.getenv("OPENAI_API_KEY", ""),
+            luna_provider=os.getenv("LUNA_PROVIDER", "openai").lower(),
             allow_live=os.getenv("ALLOW_LIVE", "false").lower() == "true",
             mock_mode=os.getenv("OPENROUTER_MOCK_MODE", "true").lower() == "true",
             budget=max(0, int(os.getenv("API_CALL_BUDGET", "1200"))),

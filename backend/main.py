@@ -59,6 +59,9 @@ def create_app(settings=None, transport=None):
         store.close()
 
     app = FastAPI(title="CubeRace: System-1 vs LLM", lifespan=lifespan)
+    def credentials_ready():
+        return bool(settings.key.strip() and (
+            settings.luna_provider != "openai" or settings.openai_key.strip()))
 
     @app.middleware("http")
     async def local_guard(request, call_next):
@@ -85,7 +88,9 @@ def create_app(settings=None, transport=None):
             "student_name": settings.student_name or "SET STUDENT_NAME",
             "student_roll": settings.student_roll or "SET STUDENT_ROLL",
             "identity_configured": bool(settings.student_name.strip() and settings.student_roll.strip()),
-            "live_enabled": bool(settings.key and settings.allow_live and not settings.mock_mode),
+            "live_enabled": bool(credentials_ready() and settings.allow_live and not settings.mock_mode),
+            "luna_provider": settings.luna_provider,
+            "live_source_label": "Live APIs (Luna: OpenAI)" if settings.luna_provider == "openai" else "Live OpenRouter",
             "default_mode": "simulated", "budget_limit": settings.budget,
             "budget_used": app.state.store.used(), "retries": settings.retries,
             "recommended_race_cap": len(MODELS) * 30 * (1 + settings.retries),
@@ -103,8 +108,8 @@ def create_app(settings=None, transport=None):
     @app.post("/api/runs", status_code=201)
     async def start(body: StartRequest):
         if body.mode == "live":
-            if not settings.key or not settings.allow_live or settings.mock_mode:
-                raise HTTPException(409, "Live disabled: configure key, ALLOW_LIVE=true and OPENROUTER_MOCK_MODE=false")
+            if not credentials_ready() or not settings.allow_live or settings.mock_mode:
+                raise HTTPException(409, "Live disabled: configure required provider keys, ALLOW_LIVE=true and OPENROUTER_MOCK_MODE=false")
             if not body.confirm_paid_calls or body.call_cap < 1:
                 raise HTTPException(422, "Explicit paid-call confirmation and positive cap required")
             if app.state.store.used() >= settings.budget:

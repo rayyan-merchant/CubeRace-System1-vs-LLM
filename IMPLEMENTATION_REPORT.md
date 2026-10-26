@@ -562,3 +562,43 @@ both Benchmark Analysis and Results Slide for a three-puzzle mocked live suite, 
 Final verification for the combined small-suite and analysis updates: **425 tests passed**,
 Ruff passed, JavaScript checks passed, and the targeted browser checks passed. One existing
 Starlette/AnyIO deprecation warning remains. All verification used fixtures or simulation.
+
+## Production Luna route correction (October 26, 2026)
+
+The earlier integration was diagnostic-only and did not change the race adapter. That
+was the cause of the screenshot still showing OpenRouter HTTP 502. Per the explicit
+request to use the OpenAI key for Luna, production environment startup now defaults
+LUNA_PROVIDER to openai and uses OPENAI_API_KEY for Luna in both races and suites.
+Jev, Clef and Claude remain on OpenRouter. No private environment file or API key was
+modified; a safe presence/configuration check found both keys and the native route ready.
+
+The production router and diagnostic CLI share a strict native Decisions parser. The
+native payload translates the same fixed v5 observation/instructions/actions, including
+six recent moves and the remaining 30-action allowance. Each request records the logical
+assigned ID, native requested/effective ID, provider route, endpoint, response identity,
+probabilities and response-reported usage. Reasoning details are normalized without
+inventing USD costs. Refusals execute no move; unavailable identities and repeated
+unsupported schemas fail closed. Native credential absence blocks live admission before
+any other model can be charged. No automatic provider fallback exists.
+
+The UI labels the native Luna route in live controls/cards, saved runs and result
+provenance. Historical request records retain their original route during replay.
+The provider route is part of saved experimental-condition metadata, so native-Luna
+and historical OpenRouter-only suites are not silently pooled. This is a documented
+provider deviation, not a claim that the OpenRouter endpoint was fixed. The application
+retains the four logical model slots; the native model ID is explicitly gpt-6-luna.
+
+All new verification used intercepted HTTP/fixtures, with no paid inference. Routing
+tests cover UI start, three-puzzle suites, full 30 actions, six-move history, mandatory
+consent, missing keys, identity/schema/refusal/HTTP failures, billing, cancellation,
+and read-only replay/exports. Browser native Start/Replay verified four fixture calls:
+Jev/Clef/Claude to OpenRouter and Luna to OpenAI, zero additional calls on replay and no
+page errors. Screenshot: data/native-luna-race-verification/native-luna-race.png.
+
+Verification completed: full regression run **433 passed**; after adding suite/cancellation
+coverage and final CLI credential guards, **82 targeted tests passed**, including all
+10 native production-route tests. Ruff and Node regression/syntax checks passed.
+Full isolated browser verification passed (128 intercepted fixtures, no real provider
+calls or page/console errors), as did the separate native Start/Replay browser check.
+One existing Starlette/AnyIO dependency deprecation warning remains. No paid calls were
+made during this correction. The private .env was not modified.

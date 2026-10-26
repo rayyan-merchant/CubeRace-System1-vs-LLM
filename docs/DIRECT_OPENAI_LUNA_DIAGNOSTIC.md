@@ -1,8 +1,10 @@
 # Optional direct OpenAI Luna diagnostic
 
-This CLI is a separate provider diagnostic, not an assignment benchmark, provider fallback
-or replacement for `openai/gpt-6-luna-decisions`. The existing four-model OpenRouter
-registry, v5 live policy, adapters, cube engine and saved runs remain unchanged.
+The CLI remains a separate provider diagnostic. Following the explicit request to use
+the OpenAI key in races, the production Luna slot now shares this native wire parser
+and uses direct OpenAI when LUNA_PROVIDER=openai (the runtime environment default).
+The logical four-model registry and cube engine are unchanged; provider conditions are
+recorded separately. The CLI itself never inserts assignment benchmark runs.
 
 ## Official contract verification
 

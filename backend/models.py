@@ -8,6 +8,7 @@ from .cube import MOVES, FACES
 from .config import Settings
 from .billing import reported
 from .turn_rules import TURN_RULES, RULES_VERSION
+from . import native_decisions as native
 
 
 @dataclass(frozen=True)
@@ -38,13 +39,17 @@ FACE_ORIENTATION = {"U": "B/R", "R": "U/B", "F": "U/R",
 
 
 def request_policy(settings):
-    return {"timeout_seconds": settings.timeout, "retries": settings.retries,
+    policy = {"timeout_seconds": settings.timeout, "retries": settings.retries,
             "claude_reasoning_effort": settings.claude_reasoning_effort,
             "chat_max_tokens": settings.claude_max_tokens, "concurrency": settings.concurrency,
             "history_window": HISTORY_WINDOW, "history_policy": "last-six-executed-agent-moves",
             "state_encoding": "URFDLB-row-major-slash-grids-v1",
             "turn_rules_version": RULES_VERSION,
             "effective_id_policy": "explicit-allowlist-2026-10-25"}
+    if settings.luna_provider == "openai":
+        policy["luna_route"] = {"provider": "OpenAI", "model": native.MODEL,
+                                "endpoint": native.ENDPOINT}
+    return policy
 
 
 ENDPOINTS = {"decisions": "https://openrouter.ai/api/alpha/decisions",
@@ -149,6 +154,12 @@ class Router:
 
     async def decide(self, model, state, history, records, run_budget, schema_failures=None):
         cfg = self.settings
+        direct = model.id == MODELS[1].id and cfg.luna_provider == "openai"
+        endpoint = native.ENDPOINT if direct else ENDPOINTS[model.interface]
+        provider_name = "OpenAI" if direct else "OpenRouter"
+        key = cfg.openai_key if direct else cfg.key
+        if direct and not key.strip():
+            raise ModelFailure("UNAVAILABLE", "OPENAI_API_KEY missing; no OpenRouter fallback", permanent=True)
         schema_failures = schema_failures if schema_failures is not None else {}
         for retry in range(cfg.retries + 1):
             async with self.semaphore:
@@ -163,11 +174,14 @@ class Router:
                           "run_id": run_budget.get("run_id"),
                           "race_index": run_budget.get("race_index"), "ledger_id": request_id,
                           "requested_model_id": model.id, "effective_model_id": None,
-                          "endpoint": ENDPOINTS[model.interface], "http_status": None,
+                          "endpoint": endpoint, "http_status": None,
                           "latency_ms": None, "outcome": "PENDING", "usage": None,
                           "provider": None, "response_id": None, "finish_reason": None,
                           "billing": reported(None)}
                 record.update(policy_version=POLICY_VERSION, history_window=HISTORY_WINDOW,
+                              provider_route="direct_openai_decisions" if direct else "openrouter",
+                              api_provider=provider_name,
+                              provider_requested_model_id=native.MODEL if direct else model.id,
                               turn_rules_version=RULES_VERSION,
                               state_encoding="URFDLB-row-major-slash-grids-v1",
                               model_visible_history=list(history[-HISTORY_WINDOW:]),
@@ -175,43 +189,54 @@ class Router:
                 records.append(record)
                 start = time.perf_counter()
                 try:
-                    response = await self.client.post(ENDPOINTS[model.interface],
-                        headers={"Authorization": f"Bearer {cfg.key}",
+                    request_body = payload(model, state, history, cfg)
+                    response = await self.client.post(endpoint,
+                        headers={"Authorization": f"Bearer {key}",
                                  "X-Title": "CubeRace: System-1 vs LLM"},
-                        json=payload(model, state, history, cfg), timeout=cfg.timeout)
+                        json=native.translate(request_body) if direct else request_body, timeout=cfg.timeout)
                     record["latency_ms"] = (time.perf_counter() - start) * 1000
                     record["http_status"] = response.status_code
+                    if direct:
+                        record["request_id"] = response.headers.get("x-request-id")
                     # Retain billing even on HTTP errors or unusable action output.
                     try:
                         envelope = strict_json(response.text)
                         if isinstance(envelope, dict):
                             record["usage"] = envelope.get("usage")
+                            if direct and isinstance(record["usage"], dict):
+                                record["provider_usage"] = record["usage"]
+                                record["usage"] = {**record["usage"], "completion_tokens_details":
+                                                   record["usage"].get("output_tokens_details")}
                             record["billing"] = reported(record["usage"])
                     except (ValueError, TypeError):
                         pass
-                    if response.status_code >= 400:
+                    if response.status_code >= 400 or (direct and response.status_code >= 300):
                         schema_failures[model.id] = 0
                         record["outcome"] = "HTTP_ERROR"
                         if response.status_code in (429, 500, 502, 503, 504) and retry < cfg.retries:
                             pass
                         else:
                             status = "UNAVAILABLE" if response.status_code in (400, 402, 404) else "API_ERROR"
-                            raise ModelFailure(status, f"OpenRouter HTTP {response.status_code}; no substitution",
-                                               permanent=response.status_code in (400, 401, 402, 403, 404, 422))
+                            raise ModelFailure(status, f"{provider_name} HTTP {response.status_code}; no substitution",
+                                               permanent=response.status_code in (400, 401, 402, 403, 404, 422)
+                                               or (direct and 300 <= response.status_code < 400))
                     else:
                         try:
                             body = strict_json(response.text)
                             if not isinstance(body, dict):
                                 raise UnsupportedSchema("Expected response object")
-                            record.update(effective_model_id=body.get("model"), usage=body.get("usage"),
-                                          provider=body.get("provider"), response_id=body.get("id"))
+                            record.update(effective_model_id=body.get("model"),
+                                          provider="OpenAI" if direct else body.get("provider"), response_id=body.get("id"))
+                            if direct:
+                                record["request_id"] = response.headers.get("x-request-id")
                             error = body.get("error")
                             if isinstance(error, dict) and error.get("code") in (400, 401, 402, 403, 404, 422):
                                 record["outcome"] = "PROVIDER_ERROR"
                                 raise ModelFailure("UNAVAILABLE", "Provider reports permanent incompatibility", permanent=True)
                             effective_id = body.get("model")
-                            if effective_id is not None and (not isinstance(effective_id, str)
-                                    or effective_id not in ALLOWED_EFFECTIVE_IDS[model.id]):
+                            allowed = {native.MODEL} if direct else ALLOWED_EFFECTIVE_IDS[model.id]
+                            if (direct and effective_id is None) or (effective_id is not None and (
+                                    not isinstance(effective_id, str) or effective_id not in allowed)):
                                 record["outcome"] = "MODEL_ID_MISMATCH"
                                 raise ModelFailure("UNAVAILABLE", "Effective model ID not in explicit allowlist", permanent=True)
                             choices = body.get("choices")
@@ -221,7 +246,16 @@ class Router:
                                 schema_failures[model.id] = 0
                                 record["outcome"] = "OUTPUT_LIMIT"
                                 raise ModelFailure("API_ERROR", "Output ceiling reached; no automatic retry or setting increase")
-                            move, meta = parse(model, body)
+                            if direct:
+                                try:
+                                    move, meta = native.parse_native(body)
+                                except native.NativeRefusal:
+                                    record["outcome"] = "REFUSED"
+                                    raise ModelFailure("API_ERROR", "OpenAI refused next_move; no move or fallback")
+                                except native.NativeSchemaError as exc:
+                                    raise UnsupportedSchema(str(exc))
+                            else:
+                                move, meta = parse(model, body)
                             if effective_id is None:
                                 record["outcome"] = "MODEL_ID_MISSING"
                                 raise ModelFailure("UNAVAILABLE", "Missing effective model ID; review routing", permanent=True)
@@ -247,7 +281,7 @@ class Router:
                     record["latency_ms"] = (time.perf_counter() - start) * 1000
                     record["outcome"] = "TRANSPORT_ERROR"
                     if retry == cfg.retries:
-                        raise ModelFailure("API_ERROR", "OpenRouter transport error or timeout")
+                        raise ModelFailure("API_ERROR", f"{provider_name} transport error or timeout")
                 except asyncio.CancelledError:
                     record["latency_ms"] = (time.perf_counter() - start) * 1000
                     record["outcome"] = "CANCELLED"

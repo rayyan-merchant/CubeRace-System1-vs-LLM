@@ -217,9 +217,9 @@ implementation correctness, not improved external model accuracy or lower billed
 
 ### Optional direct OpenAI Luna diagnostic
 
-An optional **direct OpenAI Luna** diagnostic uses the native Decisions API, the frozen
+The **direct OpenAI Luna diagnostic CLI** uses the native Decisions API, the frozen
 v4 observation policy by default (or explicit `--policy v5`), and these same two one-turn states. It never replaces the assigned
-OpenRouter adapter or enters assignment benchmark statistics:
+race adapter or enters assignment benchmark statistics:
 
 ```powershell
 # Free preview; no credentials or HTTP needed:
@@ -522,3 +522,34 @@ below five as small. Missing models retain unknown solve rates; empty results pr
 conclusions. If nothing was solved, the analysis reports that shortest-solution comparisons
 are unavailable and does not invent a winning solver. Simulated results remain labeled
 as fixtures and never produce claims about real model performance.
+
+
+### Luna provider for races and benchmark suites
+
+The running application now uses **direct OpenAI Decisions for Luna**, not only the
+standalone diagnostic. `Settings.env()` defaults `LUNA_PROVIDER` to `openai`, using the
+existing server-side `OPENAI_API_KEY` with `POST https://api.openai.com/v1/decisions`
+and native model `gpt-6-luna`. Jev, Clef and Claude continue using `OPENROUTER_API_KEY`.
+The four logical model slots remain unchanged; Luna records its assigned registry ID,
+native requested/effective ID, endpoint and provider in request exports. The UI labels
+the mixed-provider route. Native probabilities and reasoning usage are retained, while
+missing USD costs remain unknown. OpenRouter key spending limits do not cap OpenAI costs.
+
+The native adapter translates the **same fixed v5 state, instructions and 18 actions**
+used by the other models. It retains the last six moves and full 30-action allowance.
+There is no automatic provider fallback, model substitution or key replacement.
+Missing native credentials block live admission before any model is charged.
+`LUNA_PROVIDER=openrouter` explicitly selects the historical route; never use it as an
+automatic retry. Programmatic `Settings()` retains its legacy OpenRouter default for
+existing integrations; application startup uses `Settings.env()` and the native default.
+
+New mixed-provider runs have distinct `request_policy.luna_route` metadata, so analysis
+never silently pools them with old OpenRouter-only results. Existing runs and their
+errors remain unchanged and replay without inference. This is an explicitly different
+provider condition, not evidence of an OpenRouter Luna success or strict all-OpenRouter
+protocol compliance. Describe the native-provider deviation in the assignment report.
+
+Your private `.env` is not modified. If it already has `OPENAI_API_KEY` and no
+`LUNA_PROVIDER` override, restart the backend and refresh the browser; no edit is needed.
+If an old override exists, set `LUNA_PROVIDER=openai` manually. The live source should
+read `Live APIs (Luna: OpenAI)`. No new paid test is required to display saved results.
