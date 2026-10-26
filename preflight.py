@@ -7,6 +7,7 @@ from urllib.parse import urlsplit
 import httpx
 from backend.config import Settings
 from backend.runtime import ROOT, runtime_info
+from backend.models import POLICY_VERSION
 
 EXPECTED_IDS = {
     "typesafe/jev-1.13": ["typesafe/jev-1.13", "typesafe/jev-1.13-20260917"],
@@ -49,9 +50,9 @@ def check(base_url="http://127.0.0.1:8000", *, client=None, settings=None):
     checks, warnings = {}, []
     checks["local_project_directory"] = Path.cwd().resolve() == ROOT
     checks["local_model_module"] = Path(local["models_module"]).resolve() == ROOT / "backend/models.py"
-    checks["local_policy"] = local["policy_version"] == "state-action-v5-permutations" and local["history_window"] == 6
+    checks["local_policy"] = local["policy_version"] == POLICY_VERSION and local["history_window"] == 6
     checks["local_allowlist"] = local["allowed_effective_ids"] == EXPECTED_IDS
-    checks["local_claude"] = settings.claude_reasoning_effort == "low" and settings.claude_max_tokens == 1024
+    checks["local_claude"] = settings.claude_reasoning_effort == "low" and settings.claude_max_tokens == 2048
     checks["local_zero_retries"] = settings.retries == 0
     checks["local_live_enabled"] = bool(settings.key and settings.allow_live and not settings.mock_mode
         and (settings.luna_provider != "openai" or settings.openai_key.strip()))
@@ -80,7 +81,7 @@ def check(base_url="http://127.0.0.1:8000", *, client=None, settings=None):
                       "allowed_effective_ids", "project_root", "models_module", "python", "working_directory"):
             checks["server_" + field] = bool(local.get(field)) and server.get(field) == local[field]
         checks["server_live_enabled"] = config.get("live_enabled") is True
-        checks["server_claude"] = config.get("claude_reasoning_effort") == "low" and config.get("claude_max_tokens") == 1024
+        checks["server_claude"] = config.get("claude_reasoning_effort") == "low" and config.get("claude_max_tokens") == 2048
         checks["server_zero_retries"] = config.get("retries") == 0
         checks["server_move_limit"] = config.get("move_limit") == 30
         checks["server_assigned_models"] = [m["id"] for m in config.get("models", [])] == list(EXPECTED_IDS)

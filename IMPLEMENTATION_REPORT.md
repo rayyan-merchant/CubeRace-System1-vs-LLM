@@ -624,3 +624,37 @@ provider settings, selected moves or old results were changed.
 Validation: 52 affected Python tests passed, Ruff passed, JavaScript syntax checks passed,
 and both Node regressions passed (including historical refusal rendering). One existing
 Starlette/AnyIO deprecation warning remains. No paid request or experiment rerun occurred.
+
+## Compact prompt restoration and authorized 2,048-token ceiling (October 26)
+
+The latest inspected run f78bb6fc25334a5fbaffaa91d1fd292d had real, distinct outcomes:
+Jev reached 30 moves; Luna returned REFUSED; Clef was aborted at 25 moves; Claude returned
+HTTP 200 / finish_reason=length after consuming 1,024 reasoning/completion tokens with
+no move, at provider-reported cost $0.0249. Those historical results are unchanged.
+
+Restored compact v4-style face grids and ordinary face-turn definitions, removing v5's
+symbolic sticker-cycle appendix. The selection question now explicitly asks for the next
+single action. New policy state-action-v6-compact-choice is distinct from the immutable
+v4 and v5 baselines; frozen payload hashes verify neither old policy changed. All models
+receive equivalent state, instructions, 18 actions, six recent agent moves and the same
+30-action allowance. Native Luna still uses the OpenAI key, without provider fallback.
+
+The user explicitly approved a fixed 2,048-token Claude ceiling. Defaults and example
+environment configuration were updated; reasoning remains low and retries zero. Output
+exhaustion now has OUTPUT_LIMIT status rather than being lumped into API_ERROR. Saved
+old errors display their accurate outcome without rewriting SQLite. The private .env is
+not edited; a process-only override can apply 2,048 to the local server, while the user
+must set CLAUDE_MAX_TOKENS=2048 there for future manual restarts.
+
+Shared content is exactly 376 characters shorter than v5 for each model in the measured
+four-turn example. Token estimates are unavailable locally for this revision, and no
+billed-token savings, refusal reduction or solving improvement is claimed. No paid calls
+were made. See docs/PROMPT_POLICY_COMPACT_RESTORATION.md for the exact shared prompt,
+remaining limitations and free diagnostic preview command.
+
+Final validation: **438 Python tests passed** after the authorized 2,048-token change,
+including frozen v4/v5 payload hashes and prompt parity across native/Decisions/chat.
+Ruff passed, all three Node regressions passed, and the isolated full browser verification
+passed with 128 intercepted fixtures and no real provider inference. One existing
+Starlette/AnyIO dependency deprecation warning remains. Browser screenshots/logs are
+under ignored data/compact-prompt-verification/. No paid test or benchmark was executed.

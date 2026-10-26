@@ -1,5 +1,12 @@
 # CubeRace: System-1 vs LLM
 
+**Current runtime:** compact v4-style single-action prompt (`state-action-v6-compact-choice`),
+native OpenAI Luna, Claude low reasoning with a fixed **2,048-token** completion ceiling,
+and zero retries. Prior v4/v5 results remain separate. This has offline validation only;
+model refusals, poor moves and output exhaustion remain possible. See
+[the exact prompt and evidence boundaries](docs/PROMPT_POLICY_COMPACT_RESTORATION.md).
+
+
 An original local Rubik's Cube racing application for AI Engineering Assignment 02.
 Four concurrent agents receive the same cube and choose one move at a time. The arena,
 benchmark dashboard and recording slide distinguish **LIVE** evidence from **SIMULATED**
@@ -282,7 +289,7 @@ changing a limit via API requires a management key. Regular inference keys canno
 Leave margin for concurrent requests and billing settlement; do not promise a strict final
 settled total solely from an estimate.
 
-At $4/M input and $20/M output, 882 input plus the full 1,024 completion tokens costs
+Historical 1,024-token scenario (not the current ceiling): at $4/M input and $20/M output, 882 input plus the full 1,024 completion tokens costs
 **$0.024008 per Claude decision**, excluding other fees. This is an estimate using the
 user's earlier input size and [published pricing](https://openrouter.ai/anthropic/claude-opus-5.5/),
 not a measured future request. 150 such Claude decisions alone would be $3.6012. A five-puzzle
@@ -553,3 +560,14 @@ Your private `.env` is not modified. If it already has `OPENAI_API_KEY` and no
 `LUNA_PROVIDER` override, restart the backend and refresh the browser; no edit is needed.
 If an old override exists, set `LUNA_PROVIDER=openai` manually. The live source should
 read `Live APIs (Luna: OpenAI)`. No new paid test is required to display saved results.
+
+
+### Persist the authorized Claude ceiling
+
+The user approved a fixed 2,048-token ceiling on October 26. Defaults and .env.example
+now use that value; low reasoning, strict JSON output and zero retries are unchanged.
+Existing private .env files are not edited automatically. Change only
+`CLAUDE_MAX_TOKENS=2048` there to preserve the approved ceiling across manual restarts.
+The ceiling is fixed for each saved experiment and never raised after an observed failure.
+Higher possible output spend can exceed the original $1 target. No paid result is claimed
+for the new prompt/ceiling condition.

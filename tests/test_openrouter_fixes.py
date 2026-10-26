@@ -164,7 +164,7 @@ async def test_selective_smoke_ceilings_and_evidence_preservation(
         assert report["selected_models"] == [m.id for m in models]
         assert report["request_cap"] == count
         assert report["request_policy"]["retries"] == 0
-        assert report["request_policy"]["chat_max_tokens"] == 1024
+        assert report["request_policy"]["chat_max_tokens"] == 2048
         assert report["request_policy"]["history_window"] == 6
         assert report["request_count"] <= count
         if outcome == "output_limit" and MODELS[3] in models:
@@ -190,9 +190,9 @@ def test_history_policy_conditions_are_not_pooled():
     assert stats["suite_count"] == 1 and stats["excluded_policy_suites"] == 2
 
 
-def test_env_default_1024_without_overwriting_env(monkeypatch):
+def test_env_default_2048_without_overwriting_env(monkeypatch):
     monkeypatch.delenv("CLAUDE_MAX_TOKENS", raising=False)
-    assert Settings.env().claude_max_tokens == 1024
+    assert Settings.env().claude_max_tokens == 2048
     monkeypatch.setenv("CLAUDE_MAX_TOKENS", "512")
     assert Settings.env().claude_max_tokens == 512
     assert replace(Settings.env(), claude_max_tokens=1024).claude_max_tokens == 1024

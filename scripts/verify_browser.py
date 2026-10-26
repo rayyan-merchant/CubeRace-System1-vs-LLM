@@ -40,7 +40,7 @@ def main():
                              "openai/gpt-6-luna-decisions": "openai/gpt-6-luna-decisions-20261006"}.get(body["model"], body["model"])
                 result = {"model": effective, "usage": {"input_tokens": 12, "output_tokens": 2, "cost": 0.0001}}
                 if "messages" in body:
-                    assert body["max_tokens"] == 1024 and body["reasoning"] == {"effort": "low"}
+                    assert body["max_tokens"] == 2048 and body["reasoning"] == {"effort": "low"}
                     result["choices"] = [{"message": {"content": '{"move":"R"}'}, "finish_reason": "stop"}]
                 else:
                     result["answers"] = {"next_move": {"type": "choice", "choice": "R"}}

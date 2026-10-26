@@ -43,3 +43,15 @@ test('Historical refusal displays REFUSED without changing saved status',()=>{
   vm.runInContext('drawTrial(1,trial)',context);
   assert.equal($('status-1').textContent,'API ERROR');
 });
+
+test('Historical output-limit record remains a budget failure rather than a connectivity error',()=>{
+  const source=fs.readFileSync(path.join(__dirname,'../frontend/app.js'),'utf8');
+  const elements=new Map();
+  const $=id=>{if(!elements.has(id))elements.set(id,{classList:{toggle(){}},style:{}});return elements.get(id);};
+  const context=vm.createContext({$,cubeSVG:()=>'',cubeNet:()=>'',decorate:()=>{},fmt:String});
+  vm.runInContext('let activeTrials=[],displayMode="live";'+source.slice(source.indexOf('function drawTrial('),source.indexOf('\nfunction showPuzzle(')),context);
+  const trial={mode:'live',status:'API_ERROR',state:'',moves:[],elapsed_ms:null,requests:[{outcome:'OUTPUT_LIMIT',latency_ms:null}]};
+  context.trial=trial;vm.runInContext('drawTrial(3,trial)',context);
+  assert.equal($('status-3').textContent,'OUTPUT LIMIT');
+  assert.equal(trial.status,'API_ERROR');
+});

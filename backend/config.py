@@ -16,7 +16,7 @@ class Settings:
     timeout: float = 30
     retries: int = 0
     claude_reasoning_effort: str = "low"
-    claude_max_tokens: int = 1024
+    claude_max_tokens: int = 2048
     concurrency: int = 4
     student_name: str = ""
     student_roll: str = ""
@@ -42,7 +42,7 @@ class Settings:
             timeout=max(1, float(os.getenv("API_TIMEOUT_SECONDS", "30"))),
             retries=min(3, max(0, int(os.getenv("API_RETRIES", "0")))),
             claude_reasoning_effort=os.getenv("CLAUDE_REASONING_EFFORT", "low").lower(),
-            claude_max_tokens=int(os.getenv("CLAUDE_MAX_TOKENS", "1024")),
+            claude_max_tokens=int(os.getenv("CLAUDE_MAX_TOKENS", "2048")),
             concurrency=min(4, max(1, int(os.getenv("API_CONCURRENCY", "4")))),
             student_name=os.getenv("STUDENT_NAME", ""),
             student_roll=os.getenv("STUDENT_ROLL", ""),

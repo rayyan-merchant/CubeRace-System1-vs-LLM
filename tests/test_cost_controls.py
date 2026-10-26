@@ -20,7 +20,7 @@ USAGE = {"prompt_tokens": 120, "completion_tokens": 24, "total_tokens": 144,
 
 def test_fixed_claude_settings_and_compact_fair_information():
     cfg = Settings()
-    assert cfg.retries == 0 and cfg.claude_max_tokens == 1024 and cfg.claude_reasoning_effort == "low"
+    assert cfg.retries == 0 and cfg.claude_max_tokens == 2048 and cfg.claude_reasoning_effort == "low"
     for effort in ("none", "minimal", "disabled"):
         with pytest.raises(ValueError):
             Settings(claude_reasoning_effort=effort)
@@ -32,7 +32,7 @@ def test_fixed_claude_settings_and_compact_fair_information():
         assert "usage" not in body  # No undocumented addition to typed Decisions request.
     assert "scramble" not in json.dumps(bodies)
     assert bodies[3]["reasoning"] == {"effort": "low"}
-    assert bodies[3]["max_tokens"] == 1024
+    assert bodies[3]["max_tokens"] == 2048
     assert bodies[3]["usage"] == {"include": True}
     custom = payload(MODELS[3], SOLVED, [], replace(cfg, claude_reasoning_effort="medium", claude_max_tokens=768))
     assert custom["reasoning"] == {"effort": "medium"} and custom["max_tokens"] == 768
@@ -145,7 +145,7 @@ async def test_four_call_smoke_then_600_cap_suite_and_read_only_demo(tmp_path, m
         config = client.get("/api/config").json()
         assert config["budget_used"] == 604 and config["billing"]["total_cost_usd"] == pytest.approx(0.604)
         assert config["recommended_race_cap"] == 120
-        assert all(b["reasoning"] == {"effort": "low"} and b["max_tokens"] == 1024
+        assert all(b["reasoning"] == {"effort": "low"} and b["max_tokens"] == 2048
                    for b in seen if b["model"] == MODELS[3].id)
         exhausted = client.post("/api/runs", json={"mode": "live", "call_cap": 120, "confirm_paid_calls": True})
         assert exhausted.status_code == 409 and len(seen) == 604
@@ -185,11 +185,12 @@ async def test_output_limit_preserves_billing_without_retry_or_quarantine(tmp_pa
             records = []
             with pytest.raises(ModelFailure) as error:
                 await router.decide(MODELS[3], SOLVED, [], records, {"used": 0, "cap": 10}, failures)
+            assert error.value.status == "OUTPUT_LIMIT"
             assert not error.value.permanent and len(records) == 1
             assert records[0]["finish_reason"] == "length"
             assert records[0]["billing"]["reasoning_tokens"] == 20
     assert len(calls) == 2
-    assert all(c["max_tokens"] == 1024 and c["reasoning"]["effort"] == "low" for c in calls)
+    assert all(c["max_tokens"] == 2048 and c["reasoning"]["effort"] == "low" for c in calls)
     assert store.billing()["total_cost_usd"] == 0.002
     store.close()
 

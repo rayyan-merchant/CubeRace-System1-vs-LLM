@@ -67,9 +67,9 @@ def test_rules_on_scrambled_state_against_independent_library(move):
 
 def test_rules_are_state_independent_equivalent_and_v4_is_preserved():
     rules = rules_module()
-    assert POLICY_VERSION == "state-action-v5-permutations"
+    assert POLICY_VERSION == "state-action-v6-compact-choice"
     for state in (SOLVED, apply(SOLVED, "L2")):
-        views = [shared(payload(m, state, [])) for m in MODELS]
+        views = [shared(payload(m, state, [], policy_version="state-action-v5-permutations")) for m in MODELS]
         assert all(v == views[0] for v in views)
         baseline = shared(payload(MODELS[0], state, [], policy_version="state-action-v4-facegrids"))
         assert views[0]["state"] == baseline["state"]
@@ -92,3 +92,29 @@ def test_frozen_v4_payloads_match_pre_change_baseline():
              for n in (0, 6, 7)}
     digest = hashlib.sha256(json.dumps(cases, sort_keys=True).encode()).hexdigest()
     assert digest == "4028dfc49462aa94f1f48e34824ebf369abffc7822abf3dc8d24316279fa6181"
+
+
+def test_active_compact_prompt_restores_grids_and_single_step_without_cycle_block():
+    from backend.models import MODELS, payload, POLICY_VERSION, V4_INSTRUCTIONS, V5_POLICY_VERSION
+    from backend.cube import SOLVED
+    from backend.native_decisions import translate
+    assert POLICY_VERSION == 'state-action-v6-compact-choice'
+    active = payload(MODELS[0], SOLVED, [])
+    old = payload(MODELS[0], SOLVED, [], policy_version=V5_POLICY_VERSION)
+    question = active['questions']['next_move']
+    assert 'executed next' in question['instructions']
+    assert question['instructions'].endswith(V4_INSTRUCTIONS.split('Goal: ', 1)[1])
+    assert 'source>destination' not in question['instructions']
+    assert len(question['instructions']) < len(old['questions']['next_move']['instructions'])
+    assert active['state'] == old['state'] and question['criteria'] == old['questions']['next_move']['criteria']
+    native = translate(payload(MODELS[1], SOLVED, []))
+    assert native['questions'][0]['instructions'] == question['instructions']
+    assert native['input'][0]['content'][0]['data'] == active['state']
+
+
+def test_frozen_v5_payloads_stay_identical_after_compact_restoration():
+    from backend.models import V5_POLICY_VERSION
+    state = sequence(SOLVED, ['R', 'F2', 'D2', 'F2'])
+    cases = {str(n): [payload(m, state, ['U', "U'", 'R', 'R2', 'F2', 'L', 'D'][:n],
+                              policy_version=V5_POLICY_VERSION) for m in MODELS] for n in (0, 6, 7)}
+    assert hashlib.sha256(json.dumps(cases, sort_keys=True).encode()).hexdigest() == '11df10afde6283369ed69e2f51c77427e54c58b545f67af1ee7a06f5ec4f53bc'

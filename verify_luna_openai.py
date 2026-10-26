@@ -11,7 +11,7 @@ import uuid
 import httpx
 from backend.billing import reported, summarize
 from backend.config import Settings
-from backend.models import MODELS, V4_POLICY_VERSION, POLICY_VERSION, payload, strict_json
+from backend.models import MODELS, V4_POLICY_VERSION, V5_POLICY_VERSION, POLICY_VERSION, payload, strict_json
 from backend.native_decisions import (translate, parse_native, NativeSchemaError,
                                       NativeIdentityError, NativeRefusal)
 from backend.store import Store
@@ -20,7 +20,7 @@ from verify_cube_diagnostics import plan, first_action_correct
 ENDPOINT = "https://api.openai.com/v1/decisions"
 MODEL = "gpt-6-luna"
 LEDGER_MODEL = "openai-direct/gpt-6-luna"
-POLICIES = {"v4": V4_POLICY_VERSION, "v5": POLICY_VERSION}
+POLICIES = {"v4": V4_POLICY_VERSION, "v5": V5_POLICY_VERSION, "current": POLICY_VERSION}
 
 
 def native_payload(state, *, policy="v4"):
@@ -185,7 +185,7 @@ def main(argv=None):
     parser.add_argument("--confirm-paid", action="store_true",
                         help="Authorize at most two direct OpenAI requests; no retries or provider fallback")
     parser.add_argument("--policy", choices=POLICIES, default="v4",
-                        help="Fixed prompt policy; v4 baseline by default, v5 adds existing general turn rules")
+                        help="Fixed policy: frozen v4/v5 or current production policy; default v4")
     parser.add_argument("--case", choices=("all", "1", "2"), default="all",
                         help="Select one diagnostic state (one request) or both (at most two)")
     args = parser.parse_args(argv)

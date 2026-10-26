@@ -61,7 +61,7 @@ def test_ui_start_identity_completion_billing_and_read_only_replay(tmp_path, mon
         run = wait_done(client, started.json()["id"])
         assert run["status"] == "COMPLETED" and len(calls) == 4
         assert {b["model"] for b in calls} == {m.id for m in MODELS}
-        assert all(b["max_tokens"] == 1024 for b in calls if "max_tokens" in b)
+        assert all(b["max_tokens"] == 2048 for b in calls if "max_tokens" in b)
         assert run["billing"]["total_cost_usd"] == 0.0004
         for t in run["races"][0]["trials"]:
             assert t["status"] == ("UNAVAILABLE" if wrong_identity else "SOLVED")

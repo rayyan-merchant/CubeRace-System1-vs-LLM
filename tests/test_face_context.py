@@ -63,13 +63,13 @@ def test_equivalent_compact_context_and_unchanged_settings(length):
     assert "each face matches its center" in question["instructions"]
     assert "fixed-center colors" in question["instructions"]
     assert "HTM" in question["instructions"]
-    assert bodies[3]["max_tokens"] == 1024
+    assert bodies[3]["max_tokens"] == 2048
     assert bodies[3]["reasoning"] == {"effort": "low"}
     assert bodies[3]["response_format"]["json_schema"]["strict"]
 
 
 def test_new_condition_excludes_old_policy_without_mutation():
-    assert POLICY_VERSION == "state-action-v5-permutations"
+    assert POLICY_VERSION == "state-action-v6-compact-choice"
     assert request_policy(Settings())["state_encoding"] == "URFDLB-row-major-slash-grids-v1"
     base = {"mode": "live", "kind": "suite", "tier": "primary", "puzzle_count": 5,
             "races": [], "request_policy": request_policy(Settings())}
