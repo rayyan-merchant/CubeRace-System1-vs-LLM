@@ -7,7 +7,6 @@ import httpx
 from .cube import MOVES, FACES
 from .config import Settings
 from .billing import reported
-from .turn_rules import TURN_RULES
 from . import native_decisions as native
 
 
@@ -32,8 +31,6 @@ ALLOWED_EFFECTIVE_IDS = {
     "anthropic/claude-opus-5.5": {"anthropic/claude-opus-5.5"},
 }
 HISTORY_WINDOW = 6
-V4_POLICY_VERSION = "state-action-v4-facegrids"
-V5_POLICY_VERSION = "state-action-v5-permutations"
 POLICY_VERSION = "state-action-v6-compact-choice"
 FACE_ORIENTATION = {"U": "B/R", "R": "U/B", "F": "U/R",
                     "D": "F/R", "L": "U/F", "B": "U/L"}
@@ -55,8 +52,8 @@ def request_policy(settings):
 
 ENDPOINTS = {"decisions": "https://openrouter.ai/api/alpha/decisions",
              "chat": "https://openrouter.ai/api/v1/chat/completions"}
-V4_INSTRUCTIONS = (
-    "Choose one move to solve all six faces within moves_remaining. "
+INSTRUCTIONS = (
+    "Which listed face turn should be executed next to solve this Rubik's Cube, within moves_remaining? "
     "Goal: each face matches its center. Letters denote fixed-center colors "
     "(URFDLB=up/right/front/down/left/back). "
     "cube_facelets is row-major URFDLB; faces uses '/' between rows. "
@@ -64,12 +61,6 @@ V4_INSTRUCTIONS = (
     + ";".join(f"{f}={neighbors}" for f, neighbors in FACE_ORIENTATION.items()) + ". "
     "Turns: degrees, CW clockwise, CCW counterclockwise, viewed at the named face. "
     "HTM: each listed turn=1 move; 30 max."
-)
-V5_INSTRUCTIONS = V4_INSTRUCTIONS + TURN_RULES
-# Restore v4's compact representation, but ask for one bounded choice, not a full solution.
-INSTRUCTIONS = (
-    "Which listed face turn should be executed next to solve this Rubik's Cube, within moves_remaining? "
-    "Goal: " + V4_INSTRUCTIONS.split("Goal: ", 1)[1]
 )
 NAMES = dict(zip(FACES, ("up", "right", "front", "down", "left", "back")))
 CRITERIA = {m: f"{NAMES[m[0]]} " +
@@ -90,19 +81,14 @@ def strict_json(text):
     return value
 
 
-def payload(model, state, history, settings=None, *, policy_version=POLICY_VERSION):
-    if policy_version not in (V4_POLICY_VERSION, V5_POLICY_VERSION, POLICY_VERSION):
-        raise ValueError("Unknown prompt policy")
-    settings = settings or Settings(claude_max_tokens=1024 if policy_version in (
-        V4_POLICY_VERSION, V5_POLICY_VERSION) else 2048)
+def payload(model, state, history, settings=None):
+    settings = settings or Settings()
     context = {"cube_facelets": state,
                "faces": {f: "/".join(state[i:i + 3] for i in range(n * 9, n * 9 + 9, 3))
                          for n, f in enumerate(FACES)},
                "recent_moves": list(history[-HISTORY_WINDOW:]),
                "moves_remaining": 30 - len(history)}
-    instructions = {V4_POLICY_VERSION: V4_INSTRUCTIONS, V5_POLICY_VERSION: V5_INSTRUCTIONS,
-                    POLICY_VERSION: INSTRUCTIONS}[policy_version]
-    question = {"type": "choice", "instructions": instructions, "criteria": CRITERIA}
+    question = {"type": "choice", "instructions": INSTRUCTIONS, "criteria": CRITERIA}
     if model.interface == "decisions":
         return {"model": model.id, "state": context, "questions": {"next_move": question}}
     return {"model": model.id, "messages": [

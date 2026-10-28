@@ -10,3 +10,15 @@ tmp/
 node_modules/
 *.log
 *.sqlite*
+
+# Local audits, experiments and generated verification evidence.
+/_internal/
+/IMPLEMENTATION_REPORT.md
+/docs/*
+!/docs/PROMPT.md
+/verify_cube_diagnostics.py
+/verify_luna_openai.py
+/backend/turn_rules.py
+/tests/test_cube_diagnostics.py
+/tests/test_direct_openai.py
+/tests/test_turn_rules.py

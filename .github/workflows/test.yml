@@ -16,7 +16,3 @@ jobs:
           node-version: '22'
       - run: pip install -r requirements-dev.txt
       - run: python run_verification.py
-      - uses: actions/upload-artifact@v4
-        with:
-          name: simulated-verification-evidence
-          path: docs/evidence/

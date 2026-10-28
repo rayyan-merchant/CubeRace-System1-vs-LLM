@@ -17,6 +17,15 @@ def response(model, move="R", **extra):
     return body
 
 
+def native_response(move="R'", **extra):
+    return {"model": "gpt-6-luna", "answers": [{"type": "choice", "name": "next_move",
+        "choice": move, "confidence": 0.2,
+        "probabilities": [{"value": m, "probability": 1 / 18} for m in MOVES]}],
+        "usage": {"input_tokens": 100, "output_tokens": 0, "total_tokens": 100,
+                  "input_tokens_details": {"cached_tokens": 0, "cache_write_tokens": 0},
+                  "output_tokens_details": {"reasoning_tokens": 0}}, **extra}
+
+
 def test_exact_registry():
     assert [m.id for m in MODELS] == ["typesafe/jev-1.13", "openai/gpt-6-luna-decisions",
                                     "cloudflare/clef", "anthropic/claude-opus-5.5"]

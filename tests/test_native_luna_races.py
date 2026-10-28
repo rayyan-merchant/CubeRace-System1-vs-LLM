@@ -11,7 +11,7 @@ from backend.models import MODELS, payload, request_policy
 from backend.store import Store
 from backend.stats import aggregate
 from tests.test_application import wait_done
-from tests.test_direct_openai import native_response
+from tests.test_models import native_response
 from tests.test_local_readiness import one_turn_fixture
 from tests.test_models import response
 

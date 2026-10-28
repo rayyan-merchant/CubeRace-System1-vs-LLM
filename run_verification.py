@@ -13,13 +13,13 @@ from backend.main import create_app
 
 def main():
     root = Path(__file__).resolve().parent
-    evidence = root / "docs" / "evidence"
+    evidence = root / "data" / "verification"
     evidence.mkdir(parents=True, exist_ok=True)
     for label, command in (("pytest", [sys.executable, "-m", "pytest", "-q"]),
                            ("ruff", [sys.executable, "-m", "ruff", "check", "."])):
         result = subprocess.run(command, cwd=root, capture_output=True, text=True)
         output = result.stdout + result.stderr
-        # Avoid retaining host-specific account and virtualenv paths in public evidence.
+        # Avoid retaining host-specific account and virtualenv paths in generated logs.
         output = output.replace(str(root), "<PROJECT_ROOT>")
         (evidence / f"{label}-output.txt").write_text(output, encoding="utf-8")
         print(output)

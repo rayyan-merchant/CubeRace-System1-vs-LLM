@@ -20,7 +20,7 @@ from backend.main import create_app  # noqa: E402
 
 
 def main():
-    evidence = ROOT / "docs/evidence"
+    evidence = ROOT / "data/browser-verification"
     evidence.mkdir(parents=True, exist_ok=True)
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
@@ -121,8 +121,8 @@ def main():
                     page.on("console", lambda m: console_errors.append(m.text) if m.type == "error" else None)
                     page.goto(base)
                     page.locator("#scramble").filter(has_text=" ").wait_for()
-                    assert page.locator(".race-card").count() == 4
-                    assert page.locator("svg polygon").count() == 108
+                    expect(page.locator(".race-card")).to_have_count(4, timeout=30000)
+                    expect(page.locator("svg polygon")).to_have_count(108)
                     check_identity(page)
                     expect(page.locator("h1")).to_have_text("Rubik's Cube Benchmark")
                     expect(page.locator("#notice")).to_be_hidden()
